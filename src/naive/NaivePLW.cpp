@@ -4,8 +4,18 @@ double sb,eps;
 std::vector<std::tuple<int, int, double> > edges;
 std::map<std::tuple<int,int,int>, int > mpp;
 std::vector<double> b;
+void outcontainer(std::vector<double> v)
+{
+  std::cout << v.size() << std::endl;
+  for(auto it : v)
+  {
+    std::cout << it << ' ';
+  }
+  std::cout << std::endl;
+}
 int bootStrap()
 {
+  std::cout << n << std::endl;
   srand(time(0));
   std::vector<double> dist1(n), dist2(n);
   std::map<int, int> S;
@@ -13,6 +23,7 @@ int bootStrap()
   {
     dist1[i] = b[i] / sb;
   }
+  //outcontainer(dist1);
   for(int i = 0; i < N; i++)
   {
     double z = rand();
@@ -51,6 +62,7 @@ int bootStrap()
       }
       sd += dist2[j];
     }
+    std::cout << "On trial: " << i << ", the algo selected : " << j << std::endl;
     S[j]++;
   }
   int maxv = -1, maxs = 0;
@@ -66,7 +78,6 @@ int bootStrap()
 }
 int main()
 {
-  int n,m;
   std::cin >> n >> m;
   N = 100;
   edges.resize(m);
@@ -88,7 +99,8 @@ int main()
       u = i;
     }
   }
-  std::cin >> n;
+  int q;
+  std::cin >> q;
   for(int i = 0; i < n * n * n; i++)
   {
     int a, b, c, d;
@@ -96,4 +108,5 @@ int main()
     mpp[std::make_tuple(a,b,c)] = d;
   }
   std::cin >> eps;
+  std::cout << bootStrap() << std::endl;
 }

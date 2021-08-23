@@ -23,7 +23,7 @@ bool checkLaplacian()
       {
         continue;
       }
-      else if(j > i)
+      else if(j > i && (-1 * L[i][j]) > 0.00000005)
       {
         E.push_back(std::make_tuple(i,j,-1 * L[i][j]));
       }

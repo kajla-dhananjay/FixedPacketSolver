@@ -50,8 +50,14 @@ int main()
       }
     }
   }
-  for(auto it : index)
+  for(int i = 0; i < num_nodes; i++)
   {
-    std::cout << std::get<0>(it.first) << ' ' << std::get<1>(it.first) << ' ' << std::get<2>(it.first) << ' ' << it.second << std::endl;
+    for(int j = 0; j < num_nodes; j++)
+    {
+      for(int k = 0; k < num_nodes; k++)
+      {
+        std::cout << i << " " << j << " " << k << " " << index[std::make_tuple(i,j,k)] << std::endl;
+      }
+    }
   }
 }
