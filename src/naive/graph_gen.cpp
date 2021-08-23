@@ -2,7 +2,7 @@
 
 #define MAX_NODES 400
 #define PRECISION 1000000
-
+#define MAX_WEIGHT 50
 /**
  * \mainpage This is the documentation for the implemented code of GHS Algorithm. 
  */
@@ -23,7 +23,6 @@
  */
 
 
-int MAX_WEIGHT = 50;
 
 bool checkinputs(int N, double p)
 {

@@ -50,6 +50,7 @@ int main()
       }
     }
   }
+  std::cout << num_nodes << std::endl;
   for(int i = 0; i < num_nodes; i++)
   {
     for(int j = 0; j < num_nodes; j++)
