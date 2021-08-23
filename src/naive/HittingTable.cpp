@@ -1,9 +1,30 @@
 #include<bits/stdc++.h>
-#include <random>
+#include <ostream>
+int nextStep(std::vector<std::vector<double> > &P, int curr)
+{
+  int n = P.size();
+  double z = rand();
+  z /= RAND_MAX;
+  double sum = 0;
+  for(int i = 0; i < n; i++)
+  {
+    if(z >= sum && z < sum + P[curr][i])
+    {
+      return i;
+    }
+    else
+    {
+      sum += P[curr][i];
+    }
+  }
+  return n-1;
+}
 int main()
 {
   std::map<std::tuple<int, int, int>, double> index;
   int num_nodes;
+  srand(time(0));
+  std::cin >> num_nodes;
   std::cin >> num_nodes;
   std::vector<std::vector<double> > P(num_nodes, std::vector<double> (num_nodes, 0));
   for(int i = 0; i < num_nodes; i++)
@@ -17,8 +38,20 @@ int main()
   {
     for(int j = 0; j < num_nodes; j++)
     {
-      std::map<int, int> mp;
-      int start = i
+      int start = i;
+      int end = j;
+      index[std::make_tuple(start,end,start)]++;
+      index[std::make_tuple(start,end,end)]++;
+      int z = nextStep(P, start);
+      while(z != end)
+      {
+        index[std::make_tuple(start,end,z)]++;
+        z = nextStep(P, z);
+      }
     }
+  }
+  for(auto it : index)
+  {
+    std::cout << std::get<0>(it.first) << ' ' << std::get<1>(it.first) << ' ' << std::get<2>(it.first) << ' ' << it.second << std::endl;
   }
 }

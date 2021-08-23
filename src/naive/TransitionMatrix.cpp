@@ -35,7 +35,7 @@ int main()
   std::vector<double> j(n);
   for(int i = 0; i < n; i++)
   {
-    if(b[i] == -1)
+    if(b[i] < 0)
     {
       j[i] = 0;
       continue;
@@ -47,7 +47,7 @@ int main()
   }
   for(int i = 0; i < n; i++)
   {
-    if(b[i] == -1)
+    if(b[i] < 0)
     {
       L[i] = j;
       continue;
