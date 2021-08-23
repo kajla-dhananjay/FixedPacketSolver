@@ -9,8 +9,7 @@ for i in range(rows):
     matrix.append(r)
 
 P = np.array(matrix)
-I = np.identity(rows)
-A = np.subtract(P,I)
+A = np.subtract(P,np.identity(rows))
 last = np.ones(rows)
 Pp = np.transpose(A)
 A = np.append(Pp, [last], axis = 0)
