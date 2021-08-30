@@ -4,6 +4,162 @@ double sb,eps;
 std::vector<std::tuple<int, int, double> > edges;
 std::map<std::tuple<int,int,int>, int > mpp;
 std::vector<double> b;
+std::vector<std::vector<double> > P, Cum_P;
+
+struct hash_pair {
+    template <class T1, class T2>
+    size_t operator()(const std::pair<T1, T2>& p) const
+    {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ hash2;
+    }
+};
+
+std::unordered_map<std::pair<int, int>, std::vector< std::pair<double, int> >, hash_pair > HittingTable;
+
+int distSelector(const std::vector<double> &dist)
+{
+  int n = dist.size();
+ 
+  for(auto it : dist)
+  {
+    std::cout << it << ' ';
+  }
+  std::cout << std::endl;
+
+  double z = rand();
+  z /= RAND_MAX;
+
+  //std::cout << std::endl << "z = " << z << std::endl; 
+
+  if(z <= dist[0])
+  {
+    return 0;
+  }
+
+  int low = 0;
+  int high = n-1;
+ 
+  int mid = 0;
+
+  while(true)
+  {
+    mid = low + high;
+    mid /= 2;
+   
+    if(high == low - 1)
+    {
+      if(dist[low] <= z && dist[high] >= z)
+      {
+        mid = low;
+      }
+      else
+      {
+        mid = high;
+      }
+      break;
+    }
+
+    if(dist[mid+1] < z)
+    {
+      low = mid+1;
+    }
+    else if(dist[mid] > z)
+    {
+      high = mid-1;
+    }
+    else
+    {
+      while(dist[mid] == z && dist[mid+1] == dist[mid] && mid >0)
+      {
+        mid--;
+      }
+      break;
+    }
+  }
+  //std::cout << "Chosen value: " << mid << " | Chosen Interval: " << dist[mid] << " - " << dist[mid+1] << std::endl;
+  return mid+1;
+}
+
+int distSelector(const std::vector<std::pair<double, int> > &dist)
+{
+  int n = dist.size();
+ 
+  /*
+  for(auto it : dist)
+  {
+    std::cout << it.second << ' ' << it.first << std::endl;
+  }
+  std::cout << std::endl;
+  */
+
+  double z = rand();
+  z /= RAND_MAX;
+
+  if(z <= dist[0].first)
+  {
+    return dist[0].second;
+  }
+
+  //std::cout << std::endl << "z = " << z << std::endl; 
+
+  int low = 0;
+  int high = n-1;
+ 
+  int mid = 0;
+
+  while(true)
+  {
+    mid = low + high;
+    mid /= 2;
+   
+    if(high == low - 1)
+    {
+      if(dist[low].first <= z && dist[high].first >= z)
+      {
+        mid = low;
+      }
+      else
+      {
+        mid = high;
+      }
+      break;
+    }
+
+    if(dist[mid+1].first < z)
+    {
+      low = mid+1;
+    }
+    else if(dist[mid].first > z)
+    {
+      high = mid-1;
+    }
+    else
+    {
+      while(dist[mid].first == z && dist[mid+1].first == dist[mid].first && mid >0)
+      {
+        mid--;
+      }
+      break;
+    }
+  }
+  //std::cout << "Chosen value: " << dist[mid+1].second << " | Chosen Interval: " << dist[mid].first << " - " << dist[mid+1].first << std::endl;
+  return dist[mid+1].second;
+}
+
+void generateHittingTable(int start, int end)
+{
+
+  std::map<int, int> mp;
+  int z = start;
+  while(z != end)
+  {
+    mp[z]++;
+    z = distSelector(Cum_P[z]); 
+  }
+}
+
 void outcontainer(std::vector<double> v)
 {
   std::cout << v.size() << std::endl;
@@ -13,6 +169,7 @@ void outcontainer(std::vector<double> v)
   }
   std::cout << std::endl;
 }
+
 int bootStrap()
 {
   std::cout << n << std::endl;
@@ -76,10 +233,11 @@ int bootStrap()
   }
   return maxs;
 }
+
 int main()
 {
+  //Handling Graph Input
   std::cin >> n >> m;
-  N = 100;
   edges.resize(m);
   for(int i = 0; i < m; i++)
   {
@@ -88,6 +246,8 @@ int main()
     std::cin >> a >> b >> c;
     edges[i] = std::make_tuple(a,b,c);
   }
+
+  //Handling Column vector Input
   std::cin >> z;
   b.resize(z);
   for(int i = 0; i < z; i++)
@@ -99,14 +259,8 @@ int main()
       u = i;
     }
   }
-  int q;
-  std::cin >> q;
-  for(int i = 0; i < n * n * n; i++)
-  {
-    int a, b, c, d;
-    std::cin >> a >> b >> c >> d;
-    mpp[std::make_tuple(a,b,c)] = d;
-  }
+  
+  //Handling Epsilon Input
   std::cin >> eps;
   std::cout << bootStrap() << std::endl;
 }
