@@ -1,10 +1,18 @@
 #include<bits/stdc++.h>
-int n,m,z,N,u;
+int n,m,z,N = -1,u;
 double sb,eps;
+
+std::vector<double> b;
+std::vector<double> J;
+
+std::vector<std::pair<double, int> > sources;
+std::vector<std::vector<double> > A, D, L;
+std::vector<std::vector<std::pair<double, int> > > P, Cum_P;
+
+std::vector<std::vector<int> > adj_list;
+
 std::vector<std::tuple<int, int, double> > edges;
 std::map<std::tuple<int,int,int>, int > mpp;
-std::vector<double> b;
-std::vector<std::vector<double> > P, Cum_P;
 
 struct hash_pair {
     template <class T1, class T2>
@@ -150,17 +158,28 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
 
 void generateHittingTable(int start, int end)
 {
-
-  std::map<int, int> mp;
+  std::unordered_map<int, int> mp;
   int z = start;
+  long long int sum = 0;
   while(z != end)
   {
     mp[z]++;
+    sum++;
     z = distSelector(Cum_P[z]); 
   }
+  mp[z]++;
+  sum++;
+  std::vector<std::pair<double, int> > dist;
+  for(auto it : mp)
+  {
+    double z = it.second;
+    z /= sum;
+    dist.push_back(std::make_pair(z, it.first));
+  }
+  HittingTable[std::make_pair(start, end)] = dist;
 }
 
-void outcontainer(std::vector<double> v)
+void outcontainer(const std::vector<double> &v)
 {
   std::cout << v.size() << std::endl;
   for(auto it : v)
@@ -170,68 +189,34 @@ void outcontainer(std::vector<double> v)
   std::cout << std::endl;
 }
 
-int bootStrap()
+int bootstrap()
 {
-  std::cout << n << std::endl;
-  srand(time(0));
-  std::vector<double> dist1(n), dist2(n);
-  std::map<int, int> S;
-  for(int i = 0; i < n; i++)
+  if(N == -1)
   {
-    dist1[i] = b[i] / sb;
+    N = 15 * n;
   }
-  //outcontainer(dist1);
-  for(int i = 0; i < N; i++)
+  std::unordered_map<int, int> Shat;
+  for(int t = 0; t < N; t++)
   {
-    double z = rand();
-    z /= RAND_MAX;
-    double sd = 0;
-    int j = 0;
-    for(; j < n; j++)
+    int what = distSelector(sources);
+    if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end())
     {
-      if(z >= sd && z < sd + dist1[j])
-      {
-        break;
-      }
-      sd += dist1[j];
+      generateHittingTable(what, u);
     }
-    int start = j;
-    int end = u;
-    int tot = 0;
-    for(int i = 0; i < n; i++)
-    {
-      tot += mpp[std::make_tuple(start, end, i)];
-    }
-    for(int i = 0; i < n; i++)
-    {
-      dist2[i] = mpp[std::make_tuple(start, end, i)];
-      dist2[i] /= tot;
-    }
-    z = rand();
-    z /= RAND_MAX;
-    sd = 0;
-    j = 0;
-    for(; j < n; j++)
-    {
-      if(z >= sd && z < sd + dist2[j])
-      {
-        break;
-      }
-      sd += dist2[j];
-    }
-    std::cout << "On trial: " << i << ", the algo selected : " << j << std::endl;
-    S[j]++;
+    int uHat = distSelector(HittingTable[std::make_pair(what,u)]);
+    Shat[uHat]++;
   }
-  int maxv = -1, maxs = 0;
-  for(auto it : S)
+  int maxv = -1;
+  int shat = -1;
+  for(auto it : Shat)
   {
     if(maxv < it.second)
     {
       maxv = it.second;
-      maxs = it.first;
+      shat = it.first;
     }
   }
-  return maxs;
+  return shat;
 }
 
 int main()
@@ -239,17 +224,51 @@ int main()
   //Handling Graph Input
   std::cin >> n >> m;
   edges.resize(m);
+  adj_list.resize(n);
+  P.resize(n);
+  Cum_P.resize(n);
+  A.resize(n, std::vector<double>(n,0));
+  D.resize(n, std::vector<double>(n,0));
+  L.resize(n, std::vector<double>(n,0));
+
   for(int i = 0; i < m; i++)
   {
     int a,b;
     double c;
     std::cin >> a >> b >> c;
+    adj_list[a].push_back(b);
+    adj_list[b].push_back(a);
+    A[a][b] = c;
+    A[b][a] = c;
+    L[a][b] = -1 * c;
+    L[b][a] = -1 * c;
+    L[a][a] -= c;
+    L[b][b] -= c;
+    D[a][a] += c;
+    D[b][b] += c;
     edges[i] = std::make_tuple(a,b,c);
+  }
+
+  for(int i = 0; i < n; i++)
+  {
+    double s = 0;
+    for(auto it : adj_list[i])
+    {
+      double z = A[i][it];
+      z /= D[i][i];
+      s += z;
+      if(z > 0)
+      {
+        P[i].push_back(std::make_pair(z,it));
+        Cum_P[i].push_back(std::make_pair(s,it));
+      }
+    }
   }
 
   //Handling Column vector Input
   std::cin >> z;
   b.resize(z);
+  J.resize(z);
   for(int i = 0; i < z; i++)
   {
     std::cin >> b[i];
@@ -259,8 +278,35 @@ int main()
       u = i;
     }
   }
-  
+  for(int i = 0; i < z; i++)
+  {
+    if(b[i] < 0)
+    {
+      J[i] = 0;
+    }
+    else
+    {
+      J[i] = b[i]/sb;
+    }
+    if(J[i] > 0)
+    {
+      sources.push_back(std::make_pair(J[i], i));
+    }
+  }
+
+  double temp = 0;
+  P[u].clear();
+  Cum_P[u].clear();
+
+  for(int i = 0; i < n; i++)
+  {
+    if(J[i] > 0)
+    {
+      P[u].push_back(std::make_pair(J[i],i));
+      temp += J[i];
+      Cum_P[u].push_back(std::make_pair(temp,i));
+    }
+  }
   //Handling Epsilon Input
   std::cin >> eps;
-  std::cout << bootStrap() << std::endl;
 }
