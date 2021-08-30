@@ -40,8 +40,7 @@ This project has the following files:
 The Input for PLW-SOLVE is formatted as:
 
 ```
-<G> // G is the undirected, unweighted graph corresponding to L
-<w> // w is the weight function of edges
+<G> // G is the undirected, weighted graph corresponding to L
 <b> // b is the column vector in Lx = b
 <epsilon> // epsilon is the error parameter for the algorithm's termination
 ```
@@ -50,8 +49,7 @@ or as:
 
 ```
 0 // Denotes Debug/Analysis mode
-<G> // G is the undirected, unweighted graph corresponding to L
-<w> // w is the weight function of edges
+<G> // G is the undirected, weighted graph corresponding to L
 <b> // b is the column vector in Lx = b
 <epsilon> // epsilon is the error parameter for the algorithm's termination
 <x> // x is the final solution to Lx = b, computed through standard solvers

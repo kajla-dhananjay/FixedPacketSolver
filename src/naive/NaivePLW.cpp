@@ -116,22 +116,12 @@ int distSelector(const std::vector<double> &dist)
       break;
     }
   }
-  //std::cout << "Chosen value: " << mid << " | Chosen Interval: " << dist[mid] << " - " << dist[mid+1] << std::endl;
   return mid+1;
 }
 
 int distSelector(const std::vector<std::pair<double, int> > &dist)
 {
   int n = dist.size();
- 
-  /*
-  for(auto it : dist)
-  {
-    std::cout << it.second << ' ' << it.first << std::endl;
-  }
-  std::cout << std::endl;
-  */
-
   double z = rand();
   z /= RAND_MAX;
 
@@ -139,8 +129,6 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
   {
     return dist[0].second;
   }
-
-  //std::cout << std::endl << "z = " << z << std::endl; 
 
   int low = 0;
   int high = n-1;
@@ -182,11 +170,6 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
       break;
     }
   }
-  //std::cout << "CHOOSING" << std::endl;
-  //outcontainer(dist);
-  //std::cout << mid+1 << ' ' << dist.size() << std::endl;
-  //std::cout << "Chosen value: " << dist[mid+1].second << " | Chosen Interval: " << dist[mid].first << " - " << dist[mid+1].first << std::endl;
-  //std::cout << "CHOSEN" << std::endl;
   return dist[mid+1].second;
 }
 
@@ -194,14 +177,12 @@ void generateHittingTable(int start, int end)
 {
   std::unordered_map<int, int> mp;
   int z = start;
-  //std::cout << "Path vertex: " << z << std::endl;
   long long int sum = 0;
   while(z != end)
   {
     mp[z]++;
     sum++;
     z = distSelector(Cum_P[z]); 
-    //std::cout << "Path vertex: " << z << std::endl;
   }
   mp[z]++;
   sum++;
@@ -214,7 +195,6 @@ void generateHittingTable(int start, int end)
     r += z;
     dist.push_back(std::make_pair(r, it.first));
   }
-  //outcontainer(dist);
   HittingTable[std::make_pair(start, end)] = dist;
 }
 
@@ -222,8 +202,7 @@ int bootstrap()
 {
   if(N == -1)
   {
-    N = 1;
-    //N = 15 * n;
+    N = 15 * n;
   }
   std::unordered_map<int, int> Shat;
   for(int t = 0; t < N; t++)
@@ -253,7 +232,6 @@ int bootstrap()
 
 int main()
 {
-  //Handling Graph Input
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
   
@@ -301,7 +279,7 @@ int main()
       }
     }
   }
-  //Handling Column vector Input
+  
   std::cin >> z;
   b.resize(z);
   J.resize(z);
@@ -344,12 +322,8 @@ int main()
     }
   }
 
-  //outmatrix(P, "P");
-  //outmatrix(Cum_P, "Cum_P");
-
-  //Handling Epsilon Input
   std::cin >> eps;
-  //std::cout << u << std::endl;
+  
   for(int q = 0; q < 5; q++)
   {
     std::cout << bootstrap() << std::endl;
