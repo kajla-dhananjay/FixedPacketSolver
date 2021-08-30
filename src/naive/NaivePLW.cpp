@@ -222,6 +222,8 @@ int bootstrap()
 int main()
 {
   //Handling Graph Input
+  std::ios_base::sync_with_stdio(false);
+  std::cin.tie(NULL);
   std::cin >> n >> m;
   edges.resize(m);
   adj_list.resize(n);
