@@ -26,16 +26,46 @@ struct hash_pair {
 
 std::unordered_map<std::pair<int, int>, std::vector< std::pair<double, int> >, hash_pair > HittingTable;
 
-int distSelector(const std::vector<double> &dist)
+void outcontainer(const std::vector<double> &v)
 {
-  int n = dist.size();
- 
-  for(auto it : dist)
+  for(auto it : v)
   {
     std::cout << it << ' ';
   }
   std::cout << std::endl;
+}
 
+void outcontainer(const std::vector<std::pair<double,int> > &v)
+{
+  for(auto it : v)
+  {
+    std::cout << it.first << ' ' << it.second << std::endl;
+  }
+  std::cout << std::endl;
+}
+
+void outmatrix(const std::vector<std::vector<double> > &v, std::string s = "")
+{
+  std::cout << "Printing " << s << std::endl;
+  for(auto it : v)
+  {
+    outcontainer(it);
+  }
+}
+
+void outmatrix(const std::vector<std::vector<std::pair<double, int> > > &v, std::string s = "")
+{
+  std::cout << "Printing " << s << std::endl;
+  for(auto it : v)
+  {
+    outcontainer(it);
+  }
+}
+
+int distSelector(const std::vector<double> &dist)
+{
+  int n = dist.size();
+ 
   double z = rand();
   z /= RAND_MAX;
 
@@ -152,7 +182,11 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
       break;
     }
   }
+  //std::cout << "CHOOSING" << std::endl;
+  //outcontainer(dist);
+  //std::cout << mid+1 << ' ' << dist.size() << std::endl;
   //std::cout << "Chosen value: " << dist[mid+1].second << " | Chosen Interval: " << dist[mid].first << " - " << dist[mid+1].first << std::endl;
+  //std::cout << "CHOSEN" << std::endl;
   return dist[mid+1].second;
 }
 
@@ -160,40 +194,36 @@ void generateHittingTable(int start, int end)
 {
   std::unordered_map<int, int> mp;
   int z = start;
+  //std::cout << "Path vertex: " << z << std::endl;
   long long int sum = 0;
   while(z != end)
   {
     mp[z]++;
     sum++;
     z = distSelector(Cum_P[z]); 
+    //std::cout << "Path vertex: " << z << std::endl;
   }
   mp[z]++;
   sum++;
   std::vector<std::pair<double, int> > dist;
+  double r = 0;
   for(auto it : mp)
   {
     double z = it.second;
     z /= sum;
-    dist.push_back(std::make_pair(z, it.first));
+    r += z;
+    dist.push_back(std::make_pair(r, it.first));
   }
+  //outcontainer(dist);
   HittingTable[std::make_pair(start, end)] = dist;
-}
-
-void outcontainer(const std::vector<double> &v)
-{
-  std::cout << v.size() << std::endl;
-  for(auto it : v)
-  {
-    std::cout << it << ' ';
-  }
-  std::cout << std::endl;
 }
 
 int bootstrap()
 {
   if(N == -1)
   {
-    N = 15 * n;
+    N = 1;
+    //N = 15 * n;
   }
   std::unordered_map<int, int> Shat;
   for(int t = 0; t < N; t++)
@@ -203,6 +233,7 @@ int bootstrap()
     {
       generateHittingTable(what, u);
     }
+    //outcontainer(HittingTable[std::make_pair(what, u)]);
     int uHat = distSelector(HittingTable[std::make_pair(what,u)]);
     Shat[uHat]++;
   }
@@ -212,6 +243,7 @@ int bootstrap()
   {
     if(maxv < it.second)
     {
+      //std::cout << it.first << ' ' << it.second;
       maxv = it.second;
       shat = it.first;
     }
@@ -224,6 +256,9 @@ int main()
   //Handling Graph Input
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
+  
+  srand(time(0));
+
   std::cin >> n >> m;
   edges.resize(m);
   adj_list.resize(n);
@@ -266,7 +301,6 @@ int main()
       }
     }
   }
-
   //Handling Column vector Input
   std::cin >> z;
   b.resize(z);
@@ -309,6 +343,15 @@ int main()
       Cum_P[u].push_back(std::make_pair(temp,i));
     }
   }
+
+  //outmatrix(P, "P");
+  //outmatrix(Cum_P, "Cum_P");
+
   //Handling Epsilon Input
   std::cin >> eps;
+  //std::cout << u << std::endl;
+  for(int q = 0; q < 5; q++)
+  {
+    std::cout << bootstrap() << std::endl;
+  }
 }
