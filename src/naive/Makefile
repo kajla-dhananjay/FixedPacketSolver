@@ -24,5 +24,5 @@ b_gen: b_gen.cpp
 NaivePLW: NaivePLW.cpp
 	g++ -o NaivePLW NaivePLW.cpp
 
-clean: graph_gen b_gen HittingTable NaivePLW
+clean: graph_gen b_gen NaivePLW
 	rm -rf graph_gen b_gen NaivePLW graph.txt b.txt laplacian.txt eq.txt p.txt plw_input.txt data.txt a.out
