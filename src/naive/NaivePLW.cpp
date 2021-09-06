@@ -66,11 +66,9 @@ void outmatrix(const std::vector<std::vector<std::pair<double, int> > > &v, std:
 int distSelector(const std::vector<double> &dist)
 {
   int n = dist.size();
- 
+
   double z = rand();
   z /= RAND_MAX;
-
-  //std::cout << std::endl << "z = " << z << std::endl; 
 
   if(z <= dist[0])
   {
@@ -79,14 +77,14 @@ int distSelector(const std::vector<double> &dist)
 
   int low = 0;
   int high = n-1;
- 
+
   int mid = 0;
 
   while(true)
   {
     mid = low + high;
     mid /= 2;
-   
+
     if(high == low - 1)
     {
       if(dist[low] <= z && dist[high] >= z)
@@ -125,7 +123,6 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
   int n = dist.size();
   double z = rand();
   z /= RAND_MAX;
-
   if(z <= dist[0].first)
   {
     return dist[0].second;
@@ -133,14 +130,14 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
 
   int low = 0;
   int high = n-1;
- 
+
   int mid = 0;
 
   while(true)
   {
     mid = low + high;
     mid /= 2;
-   
+
     if(high == low - 1)
     {
       if(dist[low].first <= z && dist[high].first >= z)
@@ -179,25 +176,17 @@ void generateHittingTable(int start, int end)
   std::unordered_map<int, int> mp;
   int z = start;
   long long int sum = 0;
-  int maxs = 0;
-  int maxv = -1;
-  std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << std::endl;
+  //std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << std::endl;
   while(z != end)
   {
     mp[z]++;
     sum++;
-    if(maxs < mp[z])
-    {
-      maxs = mp[z];
-      maxv = z;
-    }
-    z = distSelector(Cum_P[z]); 
-    std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << " top frequency: " << maxs << " top node: " << maxv << std::endl;
+    z = distSelector(Cum_P[z]);
+    //std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << std::endl;
   }
   mp[z]++;
   sum++;
-  std::cout << "Found target at iteration: " << sum << std::endl;
-  exit(0);
+  //std::cout << "Found target at iteration: " << sum << std::endl;
   std::vector<std::pair<double, int> > dist;
   double r = 0;
   for(auto it : mp)
@@ -207,6 +196,7 @@ void generateHittingTable(int start, int end)
     r += z;
     dist.push_back(std::make_pair(r, it.first));
   }
+  //outcontainer(dist);
   HittingTable[std::make_pair(start, end)] = dist;
 }
 
@@ -214,28 +204,29 @@ int bootstrap()
 {
   if(N == -1)
   {
-    N = 5 * n;
+    N = 15 * n;
   }
   std::unordered_map<int, int> Shat;
   for(int t = 0; t < N; t++)
   {
-    std::cout << "At iteration: " << t << " out of " << N << " iterations" << std::endl; 
+    //std::cout << "At iteration: " << t << " out of " << N << " iterations" << std::endl;
     int what = distSelector(sources);
+    //std::cout << "Picked source: " << what << std::endl;
     if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end())
     {
       generateHittingTable(what, u);
     }
-    //outcontainer(HittingTable[std::make_pair(what, u)]);
-    int uHat = distSelector(HittingTable[std::make_pair(what,u)]);
-    Shat[uHat]++;
+    int uhat = distSelector(HittingTable[std::make_pair(what,u)]);
+    //std::cout << "Picked vertex: " << uhat << std::endl;
+    Shat[uhat]++;
   }
   int maxv = -1;
   int shat = -1;
   for(auto it : Shat)
   {
+    //std::cout << it.first << " " << it.second << std::endl;
     if(maxv < it.second)
     {
-      //std::cout << it.first << ' ' << it.second;
       maxv = it.second;
       shat = it.first;
     }
@@ -247,27 +238,28 @@ int main()
 {
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
-  
+
   srand(time(0));
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  std::cin >> n >> m;
+  scanf("%d %d\n", &n, &m);
   edges.resize(m);
   adj_list.resize(n);
   P.resize(n);
   Cum_P.resize(n);
   D.resize(n);
-  
+
   auto stop1 = std::chrono::high_resolution_clock::now();
   auto dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start);
-  std::cout << "Base Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl;
+  std::cerr << "Base Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl;
 
   for(int i = 0; i < m; i++)
   {
+    //std::cout << i << std::endl;
     int a,b;
     double c;
-    std::cin >> a >> b >> c;
+    scanf("%d %d %lf\n", &a, &b, &c);
     adj_list[a].push_back(b);
     adj_list[b].push_back(a);
     weightMap[{a,b}] = c;
@@ -279,8 +271,8 @@ int main()
 
   auto stop2 = std::chrono::high_resolution_clock::now();
   auto dur2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - stop1);
-  std::cout << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl;
-  
+  std::cerr << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl;
+
   for(int i = 0; i < n; i++)
   {
     double s = 0;
@@ -296,23 +288,24 @@ int main()
       }
     }
   }
- 
+
   auto stop3 = std::chrono::high_resolution_clock::now();
   auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(stop3 - stop2);
-  std::cout << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl;
+  std::cerr << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl;
 
-  std::cin >> z;
+  scanf("%d\n", &z);;
   b.resize(z);
   J.resize(z);
   for(int i = 0; i < z; i++)
   {
-    std::cin >> b[i];
+    scanf("%lf\n", &b[i]);
     if(b[i] < 0)
     {
       sb = b[i] * -1;
       u = i;
     }
   }
+  double sum = 0;
   for(int i = 0; i < z; i++)
   {
     if(b[i] < 0)
@@ -325,9 +318,12 @@ int main()
     }
     if(J[i] > 0)
     {
-      sources.push_back(std::make_pair(J[i], i));
+      sum += J[i];
+      sources.push_back(std::make_pair(sum, i));
     }
   }
+
+  //outcontainer(sources);
 
   double temp = 0;
   P[u].clear();
@@ -344,15 +340,17 @@ int main()
   }
 
   std::cin >> eps;
-  
+
   auto stop4 = std::chrono::high_resolution_clock::now();
   auto dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3);
-  std::cout << "Graph Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl;
+  std::cerr << "Graph Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl;
 
   std::cout << bootstrap() << std::endl;
 
   auto stop5 = std::chrono::high_resolution_clock::now();
   auto dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4);
-  std::cout << "Graph Input Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl;
+  std::cerr << "Graph Processing Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl;
+  auto dur6 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - start);
+  std::cerr << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl;
 
 }
