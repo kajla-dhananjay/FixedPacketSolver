@@ -40,7 +40,7 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
       DFS(i, color_cnt++, adj_list, color, colormap); // Recursive DFS
     }
   }
-  std::cerr << "Total Components = " << color_cnt << std::endl;
+  std::cerr << "Total Components = " << color_cnt << " ";
   std::vector<int> cc(color_cnt);
   int maxv = -1, maxo = -1;
   for(int i = 0; i < N; i++)
@@ -56,7 +56,7 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
       maxo = color[i];
     }
   }
-  std::cerr << "Nodes in Largest Component = " << maxv << std::endl;
+  std::cerr << "| Nodes = " << maxv << " ";
   return {maxo,maxv};
 }
 
@@ -100,7 +100,8 @@ int main()
   std::cerr << "Max Edges : " << e << std::endl;
   std::cerr << "Total probability = " << ((double)edge_count) / e << " Expected Probability = " << p/PRECISION << std::endl;
 #endif
-
+  int val = 0;
+  std::map<int, int> mppp;
   for(auto it : edges)
   {
     int a = std::get<0>(it);
@@ -112,7 +113,15 @@ int main()
     }
     if(color[a] == color_val)
     {
-      new_edges.push_back(it);
+      if(mppp.find(a) == mppp.end())
+      {
+        mppp[a] = val++;
+      }
+      if(mppp.find(b) == mppp.end())
+      {
+        mppp[b] = val++;
+      }
+      new_edges.push_back(std::make_tuple(mppp[a], mppp[b], std::get<2>(it)));
     }
   }
   std::cout << new_n << " " << new_edges.size() << std::endl;
@@ -120,6 +129,7 @@ int main()
   {
     std::cout << std::get<0>(it) << " " << std::get<1>(it) << " " << std::get<2>(it) << std::endl;
   }
+  std::cerr << "| Edges = " << new_edges.size() << std::endl;
 
   n = new_n;
   double z = 0;

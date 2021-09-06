@@ -252,7 +252,7 @@ int main()
 
   auto stop1 = std::chrono::high_resolution_clock::now();
   auto dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start);
-  std::cerr << "Base Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl;
+  //std::cerr << "Base Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl;
 
   for(int i = 0; i < m; i++)
   {
@@ -343,9 +343,10 @@ int main()
 
   auto stop4 = std::chrono::high_resolution_clock::now();
   auto dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3);
-  std::cerr << "Graph Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl;
+  //std::cerr << "Graph Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl;
 
-  std::cout << bootstrap() << std::endl;
+  bootstrap();
+  //std::cout << bootstrap() << std::endl;
 
   auto stop5 = std::chrono::high_resolution_clock::now();
   auto dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4);
