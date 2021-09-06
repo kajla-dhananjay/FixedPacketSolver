@@ -4,10 +4,11 @@ int main()
   int n;
   std::cin >> n;
   double z = 0;
-  std::vector<double> v(n);
+  std::vector<double> v(n, 0);
   int i = 0;
-  for(; i < n-1; i++)
-  {
+  int num_sources = 40;
+  for(; i < num_sources; i++)
+  { 
     double q = rand();
     q /= RAND_MAX;
     q *= 100;
