@@ -1,4 +1,7 @@
-all: max_component_extractor graph_gen b_gen NaivePLW
+all: formatter max_component_extractor graph_gen b_gen NaivePLW
+
+formatter: formatter.cpp
+	g++ -o formatter formatter.cpp
 
 max_component_extractor: max_component_extractor.cpp
 	g++ -o max_component_extractor max_component_extractor.cpp
