@@ -2,7 +2,7 @@
 
 #include<bits/stdc++.h>
 
-// Compilation Flag Macros : TIMER, DEBUG
+// Compilation Flag Macros : TIMER, DEBUG, PARALLEL
 
 /************************* Basic Macros ***************************************/
 
@@ -37,9 +37,14 @@ template<typename T> inline void outmatrix(std::vector<std::vector<T> > & v) {fo
 int n; // Number of Nodes in Graph
 int m; // Number of Edges in Graph
 int s; // Vertex chosen via bootstrapping indicating high stationary prob. state
-
-int N = -1; // Number of samples for bootstrapping
 int u; // Stores the index of the sink vertex
+
+#ifdef PARALLEL
+  bool quit = false;
+#endif
+
+int timer = 0; // Timer for running the chain serially
+int N = -1; // Number of samples for bootstrapping
 int d = 5; // Stores the nunber of chains to run
 
 double sb; // Stores the sum of non-sink column vectors
@@ -53,7 +58,39 @@ std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, 
 
 #endif
 
-std::vector<int> X; // Column vector b as per definition
+
+#ifdef PARALLEL
+  class Timer{
+  private:
+    int timeVal;
+    std::mutex mut;
+  public:
+    Timer()
+    {
+      timeVal = 0;
+    }
+    int TimeInc()
+    {
+      mut.lock();
+      return this->timeVal;
+      this->timeVal = this->timeVal + 1;
+      mut.unlock();
+    }
+  };
+#endif
+
+std::vector<int> X; // State vector for multi-dimension markov chain
+std::vector<int> Q; // Occupancy vector for each node
+std::vector<double> mu; // Error vector mu as per definition
+
+#ifdef PARALLEL
+
+std::vector<std::pair<std::mutex, int> > X_P; // State vector for multi-dimension markov chain
+std::vector<std::pair<std::mutex, int> > Q_P; // Occupancy vector for each node
+std::vector<std::pair<std::mutex, double> > mu_P; // Error vector mu as per definition
+#endif
+
+
 
 std::vector<double> b; // Column vector b as per definition
 std::vector<double> j; // Column vector j as per definition
@@ -72,7 +109,13 @@ std::map<std::pair<int, int>, double> weightMap; // Contains mapping from pair o
 
 std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; // Stores the computed hitting table distributions for different pair of nodes
 
+#ifdef PARALLEL
+  Timer *timeStruct;
+#endif
+
 /************************* Function Prototypes ********************************/
+
+/************************* Utility Functions **********************************/
 
 void DFS(int node, std::vector<int> &visited, int &cnt); // Performs DFS on the graph storing connected counter in cnt
 
@@ -88,9 +131,19 @@ T distSelector(const std::vector<std::pair<double, T> > &dist); // Sample from a
 
 void generateHittingTable(int start, int end); // Generates Hitting Table between the two given vertices
 
+void runChainParallelInstance(); // An instance of running chain
+
+/************************* Useful Functions ***********************************/
+
 void init(); // Initializes the chain
 
 void bootstrap(); // Bootstraps the chain and finds s
+
+void runChainSerial(); // Run the chain serially
+
+#ifdef PARALLEL
+void runChainParallel(); // Run the chain parallely
+#endif
 
 void runChain(); // Run Phase two
 
@@ -225,6 +278,59 @@ void generateHittingTable(int start, int end)
   }
   HittingTable[std::make_pair(start, end)] = dist;
 }
+
+#ifdef PARALLEL
+
+void runChainParallelInstance()
+{
+  int i1, i2, i3;
+  double d1, d2, d3;
+  while(!quit)
+  {
+    i1 = ((rand()) % d); // Choosing a dimension to update
+    X_P[i1].first.lock(); // Lock our dimension
+
+    d1 = rand(); // Check whether the update is lazy
+    d1 /= RAND_MAX;
+
+    i3 = timeStruct->TimeInc();
+
+    if(d1 <= 0.5)
+    {
+      i2 = distSelector(Cum_P[X_P[i1].second]); // Select new vertex from distribution
+
+      Q_P[i2].first.lock();
+      Q_P[X_P[i1].second].first.lock();
+
+      Q_P[i2].second++; // Increment occupancy for new vertex
+      Q_P[X_P[i1].second].second--; // Decrement occupancy for previous vertex
+
+      d2 = ((double)Q_P[X_P[i1].second].second)/((double)i3); // Increment in mu for previous vertex
+      d3 = ((double)Q_P[i2].second)/((double)i3); // Increment in mu for new vertex
+
+      mu_P[X_P[i1].second].first.lock();
+      mu_P[i2].first.lock();
+
+      mu_P[X_P[i1].second].second += d2; // Update mu[previous vertex]
+      mu_P[i2].second += d3; // Update mu[new vertex]
+
+      Q_P[i2].first.unlock();
+      Q_P[X_P[i1].second].first.unlock();
+
+      X_P[i1].second = i2; // Update state of multi-dim markov chain
+    }
+
+    X_P[i1].first.unlock(); // Unock our dimension
+
+    if(d2 < eps || d3 < eps)
+    {
+      return;
+    }
+
+  }
+}
+
+#endif
 
 void init()
 {
@@ -413,10 +519,73 @@ void bootstrap()
   s = shat; // Assign chosen vertex to s
 }
 
+void runChainSerial()
+{
+  int i1, i2;
+  double d1, d2, d3;
+
+  while(true)
+  {
+    timer++; // t = t+1
+
+    i1 = ((rand()) % d); // Choosing a dimension to update
+    d1 = rand(); // Check whether the update is lazy
+    d1 /= RAND_MAX;
+
+    if(d1 <= 0.5)
+    {
+      i2 = distSelector(Cum_P[X[i1]]); // Select new vertex from distribution
+
+      Q[i2]++; // Increment occupancy for new vertex
+      Q[X[i1]]--; // Decrement occupancy for previous vertex
+
+      d2 = ((double)Q[X[i1]])/((double)timer); // Increment in mu for previous vertex
+      d3 = ((double)Q[i2])/((double)timer); // Increment in mu for new vertex
+
+      mu[X[i1]] += d2; // Update mu[previous vertex]
+      mu[i2] += d3; // Update mu[new vertex]
+
+      X[i1] = i2; // Update state of multi-dim markov chain
+    }
+
+    if(d2 < eps || d3 < eps)
+    {
+      return;
+    }
+  }
+}
+
+#ifdef PARALLEL
+
+void runChainParallel()
+{
+
+}
+
+#endif
+
 void runChain()
 {
-  X.resize(d, s);
+  /***************************** Initialization *******************************/
 
+
+  #ifdef PARALLEL
+    std::mutex temp;
+    X_P.resize(d, std::make_pair(temp, 0));
+    Q_P.resize(n, std::make_pair(temp, 0));
+    mu_P.resize(n, std::make_pair(temp, 0.0));
+    Q_P[s].second = d;
+    timeStruct = new Timer();
+    runChainParallel();
+    return;
+  #endif
+  X.resize(d, s);
+  Q.resize(n, 0);
+  mu.resize(n,0);
+  timer = 0;
+  Q[s] = d;
+  runChainSerial();
+  return;
 }
 
 void end()
@@ -436,14 +605,15 @@ void end()
 int main()
 {
 
-  /*****************************FAST I/O OPTIMIZATION**************************/
+  /*****************************Fast I/O Optimization**************************/
 
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(NULL);
 
-  /*****************************PROGRAM START**********************************/
+  /*****************************Program Start**********************************/
 
   srand(time(0));
+
 
   init();
 
