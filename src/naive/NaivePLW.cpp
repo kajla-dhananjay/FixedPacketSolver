@@ -1,146 +1,173 @@
+/************************* Standard libraries Import **************************/
+
 #include<bits/stdc++.h>
-int n,m,z,N = -1,u;
-double sb,eps;
 
-std::vector<double> b;
-std::vector<double> J;
+// Compilation Flag Macros : TIMER, DEBUG
 
-std::vector<std::pair<double, int> > sources;
-std::vector<double> D;
-std::vector<std::vector<std::pair<double, int> > > P, Cum_P;
+/************************* Basic Macros ***************************************/
 
-std::vector<std::vector<int> > adj_list;
+#define nll "" //empty string abbr
+#define br " " //space abbr
+#define nl std::endl //newline abbr
 
-std::vector<std::tuple<int, int, double> > edges;
-std::map<std::tuple<int,int,int>, int > mpp;
+/************************* Input Macros ***************************************/
 
-struct hash_pair {
-    template <class T1, class T2>
-    size_t operator()(const std::pair<T1, T2>& p) const
-    {
-        auto hash1 = std::hash<T1>{}(p.first);
-        auto hash2 = std::hash<T2>{}(p.second);
-        return hash1 ^ hash2;
-    }
-};
+#define in(a) std::cin >> a; //single input abbr
+#define in2(a, b) std::cin >> a >> b; // ...
+#define in3(a, b, c) std::cin >> a >> b >> c; // ...
 
-std::map<std::pair<int, int>, double> weightMap;
-std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable;
+/************************* Output Macros ***************************************/
 
-void outcontainer(const std::vector<double> &v)
+#define out(a) std::cout << a; // set output
+#define out2(a, b) std::cout <<  a << br <<  b; // ...
+#define out3(a, b, c) std::cout <<  a << br <<  b << br <<  c; // ..
+
+#define outs(a) out2(a,nll) // ...
+#define outn(a) std::cout << a << nl; // ...
+
+/************************* Vector I/O Macros ***********************************/
+
+template<typename T> inline void incontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){in(v[i]);}} // Inputs in space separated vectors
+template<typename T> inline void outcontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){outs(v[i]);}out(nl);} // Outputs space separated vectors
+template<typename T> inline void inmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){for(size_t j = 0; j < v[i].size(); j++){in(v[i][j])}}} // Inputs in space separated entries of newline separated vectors forming the matrix
+template<typename T> inline void outmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){outcontainer(v[i]); out(nl);}} // Outputs the matrix
+
+/************************* Global Declarations ********************************/
+
+int n; // Number of Nodes in Graph
+int m; // Number of Edges in Graph
+int s; // Vertex chosen via bootstrapping indicating high stationary prob. state
+
+int N = -1; // Number of samples for bootstrapping
+int u; // Stores the index of the sink vertex
+int d = 5; // Stores the nunber of chains to run
+
+double sb; // Stores the sum of non-sink column vectors
+double eps = 1; // Stores the bound on error required
+
+#ifdef TIMER // Declares variables for storing timestamps and durations if -DTIMER is passed as a flag
+
+std::chrono::time_point<std::chrono::high_resolution_clock> start;
+std::chrono::time_point<std::chrono::high_resolution_clock> stop1, stop2, stop3, stop4, stop5, stop6;
+std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, dur5;
+
+#endif
+
+std::vector<int> X; // Column vector b as per definition
+
+std::vector<double> b; // Column vector b as per definition
+std::vector<double> j; // Column vector j as per definition
+std::vector<double> D; // Stores total weight sum for the vertices
+
+std::vector<std::pair<double, int> > sources; // Distribution of sources
+
+std::vector<std::vector<int> > adj_list; // Adjacency list for the given graph
+
+std::vector<std::tuple<int, int, double> > edges; // List of edges of the graph
+
+std::vector<std::vector<std::pair<double, int> > > P, Cum_P; // Transition Matrix and Cumulative Transition Matrix
+
+
+std::map<std::pair<int, int>, double> weightMap; // Contains mapping from pair of nodes to their corresponding edge weight
+
+std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; // Stores the computed hitting table distributions for different pair of nodes
+
+/************************* Function Prototypes ********************************/
+
+void DFS(int node, std::vector<int> &visited, int &cnt); // Performs DFS on the graph storing connected counter in cnt
+
+bool checkConnected(); // Check if the given graph is connected
+
+template<typename T>
+bool cumDist(); // Checks whether the
+
+void throwError(std::string err); // Throws Error and exits the program
+
+template<typename T>
+T distSelector(const std::vector<std::pair<double, T> > &dist); // Sample from a given distribution
+
+void generateHittingTable(int start, int end); // Generates Hitting Table between the two given vertices
+
+void init(); // Initializes the chain
+
+void bootstrap(); // Bootstraps the chain and finds s
+
+void runChain(); // Run Phase two
+
+void end(); // Completion Formalities
+
+/************************* Utility Functions **********************************/
+
+void DFS(int node, std::vector<int> &visited, int &cnt)
 {
-  for(auto it : v)
+  cnt++; // increase counter indicating total number of connected vertices
+  visited[node] = 1; // color of node is color_val
+
+  for(auto it : adj_list[node]) // Iterate through the neighbors of current node
   {
-    std::cout << it << ' ';
+    if(visited[it] != -1) // Node already visited
+    {
+      continue;
+    }
+    DFS(it, visited, cnt); // Node not visited, apply DFS recursively
   }
-  std::cout << std::endl;
 }
 
-void outcontainer(const std::vector<std::pair<double,int> > &v)
+bool checkConnected()
 {
-  for(auto it : v)
-  {
-    std::cout << it.first << ' ' << it.second << std::endl;
-  }
-  std::cout << std::endl;
+  std::vector<int> visited(n,-1); // This vector keeps track of visited nodes
+  int cnt = 0; // Counter to keep track of visited
+  DFS(0, visited, cnt); // DFS to update visited counter
+  return (cnt == n); // Return true if all nodes have been visited, false otherwise
 }
 
-void outmatrix(const std::vector<std::vector<double> > &v, std::string s = "")
+template<typename T>
+bool cumDist(const std::vector<std::pair<double, T> > &dist)
 {
-  std::cout << "Printing " << s << std::endl;
-  for(auto it : v)
+  double prev = 0; // checks previous entry
+  for(auto it : dist)
   {
-    outcontainer(it);
+    if(it.first < prev) // cumulative prob. distribution is monotonically increasing
+    {
+      return false;
+    }
+    prev = it.first; // update previous entry
   }
+  return (prev==1); // last entry of the distribution should be 1
 }
 
-void outmatrix(const std::vector<std::vector<std::pair<double, int> > > &v, std::string s = "")
+void throwError(std::string err)
 {
-  std::cout << "Printing " << s << std::endl;
-  for(auto it : v)
-  {
-    outcontainer(it);
-  }
+  std::cerr << " Fatal Error: " << err << std::endl;
+  exit(1);
 }
 
-int distSelector(const std::vector<double> &dist)
+template<typename T>
+T distSelector(const std::vector<std::pair<double, T> > &dist)
 {
-  int n = dist.size();
+  int i1 = dist.size();
 
-  double z = rand();
-  z /= RAND_MAX;
+  double d1 = rand();
+  d1 /= RAND_MAX; // d1 represents the chosen random value
 
-  if(z <= dist[0])
-  {
-    return 0;
-  }
-
-  int low = 0;
-  int high = n-1;
-
-  int mid = 0;
-
-  while(true)
-  {
-    mid = low + high;
-    mid /= 2;
-
-    if(high == low - 1)
-    {
-      if(dist[low] <= z && dist[high] >= z)
-      {
-        mid = low;
-      }
-      else
-      {
-        mid = high;
-      }
-      break;
-    }
-
-    if(dist[mid+1] < z)
-    {
-      low = mid+1;
-    }
-    else if(dist[mid] > z)
-    {
-      high = mid-1;
-    }
-    else
-    {
-      while(dist[mid] == z && dist[mid+1] == dist[mid] && mid >0)
-      {
-        mid--;
-      }
-      break;
-    }
-  }
-  return mid+1;
-}
-
-int distSelector(const std::vector<std::pair<double, int> > &dist)
-{
-  int n = dist.size();
-  double z = rand();
-  z /= RAND_MAX;
-  if(z <= dist[0].first)
+  if(d1 <= dist[0].first) // first entry is the selected entry
   {
     return dist[0].second;
   }
 
   int low = 0;
-  int high = n-1;
+  int high = i1-1;
 
   int mid = 0;
 
-  while(true)
+  while(true) // Binary search for the interval of distribution in which d1 falls
   {
     mid = low + high;
     mid /= 2;
 
     if(high == low - 1)
     {
-      if(dist[low].first <= z && dist[high].first >= z)
+      if(dist[low].first <= d1 && dist[high].first >= d1)
       {
         mid = low;
       }
@@ -151,17 +178,17 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
       break;
     }
 
-    if(dist[mid+1].first < z)
+    if(dist[mid+1].first < d1)
     {
       low = mid+1;
     }
-    else if(dist[mid].first > z)
+    else if(dist[mid].first > d1)
     {
       high = mid-1;
     }
     else
     {
-      while(dist[mid].first == z && dist[mid+1].first == dist[mid].first && mid >0)
+      while(dist[mid].first == d1 && dist[mid+1].first == dist[mid].first && mid >0)
       {
         mid--;
       }
@@ -174,184 +201,254 @@ int distSelector(const std::vector<std::pair<double, int> > &dist)
 void generateHittingTable(int start, int end)
 {
   std::unordered_map<int, int> mp;
-  int z = start;
-  long long int sum = 0;
-  //std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << std::endl;
-  while(z != end)
+
+  int i1 = start; // Initial vertex
+  mp[start]++; // start has been visited
+  long long int sum = 1; // Total number of vertices in the walk
+
+  while(i1 != end) // Continue walking until we hit our target
   {
-    mp[z]++;
-    sum++;
-    z = distSelector(Cum_P[z]);
-    //std::cout << "Sampling number: " << sum << " at node: " << z << " with target: " << end << std::endl;
+    i1 = distSelector(Cum_P[i1]); // Select next vertex from the transition matrix
+    mp[i1]++; // increment occurences of i1
+    sum++; // increment vertex counter for the walk
   }
-  mp[z]++;
-  sum++;
-  //std::cout << "Found target at iteration: " << sum << std::endl;
-  std::vector<std::pair<double, int> > dist;
+
+  std::vector<std::pair<double, int> > dist; // Vector to generate Hitting table distribution
+
   double r = 0;
-  for(auto it : mp)
+  for(auto it : mp) // Generate Hitting Table Distribution
   {
     double z = it.second;
     z /= sum;
     r += z;
     dist.push_back(std::make_pair(r, it.first));
   }
-  //outcontainer(dist);
   HittingTable[std::make_pair(start, end)] = dist;
 }
 
-int bootstrap()
+void init()
 {
-  if(N == -1)
+
+  int i1, i2; // Temporary Int Variables
+  double d1; // Temporary Double Variables
+
+  #ifdef TIMER
+
+  start = std::chrono::high_resolution_clock::now(); // Start clock for diagnostic purposes
+
+  #endif
+
+  scanf("%d %d\n", &n, &m); // Input Number of nodes and Number of edges
+  edges.resize(m); // Initialize edges vector
+  adj_list.resize(n); // Initialize adjacency list vector
+  P.resize(n); // Initialize Transition Matrix
+  Cum_P.resize(n); // Initialize Cumulative Transition Matrix
+  D.resize(n); // Initialize Total node weight tracker
+
+  #ifdef TIMER
+
+  stop1 = std::chrono::high_resolution_clock::now(); // First breakpoint for timer
+  dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start); // Duration for taking in initial input and initializing vectors
+  std::cerr << "Base Input Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl; // Print duration on commandline
+
+    #endif
+
+  /*****************************Take Graph Input*******************************/
+
+  for(int i = 0; i < m; i++) // Input the edges
   {
-    N = 15 * n;
+    scanf("%d %d %lf\n", &i1, &i2, &d1); // Takes in the incident vertices and their edge-weight
+    adj_list[i1].push_back(i2); // Setup adjacency list
+    adj_list[i2].push_back(i1); // Setup adjacency list
+    weightMap[std::make_pair(i1, i2)] = d1; // Map given edge weight
+    weightMap[std::make_pair(i2,i1)] = d1; // Map given edge weight
+    D[i1] += d1; // Add weight of given edges to total node weight
+    D[i2] += d1; // Add weight of given edges to total node weight
+    edges[i] = std::make_tuple(i1,i2,d1); // append given edge to the edges
   }
-  std::unordered_map<int, int> Shat;
-  for(int t = 0; t < N; t++)
+
+  if(!checkConnected()) // Check if the graph is connected
   {
-    //std::cout << "At iteration: " << t << " out of " << N << " iterations" << std::endl;
-    int what = distSelector(sources);
-    //std::cout << "Picked source: " << what << std::endl;
-    if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end())
+    throwError("Given Graph is not connected");
+  }
+
+  #ifdef TIMER
+
+  stop2 = std::chrono::high_resolution_clock::now(); // Second breakpoint for timer
+  dur2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - stop1); // Duration for taking in graph input
+  std::cerr << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+
+  #endif
+
+  /*****************************Create Transition Matrix***********************/
+
+  for(int i = 0; i < n; i++) // Setting up the transition matrix for our markov chain
+  {
+    d1 = 0; // Cumulative Probability counter
+
+    if(D[i] < 0.00000001) // Check if cumulative edge weight of a vertex is very low or 0
     {
-      generateHittingTable(what, u);
+      throwError("Vertex " + std::to_string(D[i]) + " is either fully or almost disconnected."); // Throw Error and exit
     }
-    int uhat = distSelector(HittingTable[std::make_pair(what,u)]);
-    //std::cout << "Picked vertex: " << uhat << std::endl;
-    Shat[uhat]++;
-  }
-  int maxv = -1;
-  int shat = -1;
-  for(auto it : Shat)
-  {
-    //std::cout << it.first << " " << it.second << std::endl;
-    if(maxv < it.second)
+
+    for(auto it : adj_list[i]) // Scan through all neighboring vertices
     {
-      maxv = it.second;
-      shat = it.first;
-    }
-  }
-  return shat;
-}
-
-int main()
-{
-  std::ios_base::sync_with_stdio(false);
-  std::cin.tie(NULL);
-
-  srand(time(0));
-
-  auto start = std::chrono::high_resolution_clock::now();
-
-  scanf("%d %d\n", &n, &m);
-  edges.resize(m);
-  adj_list.resize(n);
-  P.resize(n);
-  Cum_P.resize(n);
-  D.resize(n);
-
-  auto stop1 = std::chrono::high_resolution_clock::now();
-  auto dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start);
-  //std::cerr << "Base Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl;
-
-  for(int i = 0; i < m; i++)
-  {
-    //std::cout << i << std::endl;
-    int a,b;
-    double c;
-    scanf("%d %d %lf\n", &a, &b, &c);
-    adj_list[a].push_back(b);
-    adj_list[b].push_back(a);
-    weightMap[{a,b}] = c;
-    weightMap[{b,a}] = c;
-    D[b] += c;
-    D[a] += c;
-    edges[i] = std::make_tuple(a,b,c);
-  }
-
-  auto stop2 = std::chrono::high_resolution_clock::now();
-  auto dur2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - stop1);
-  std::cerr << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl;
-
-  for(int i = 0; i < n; i++)
-  {
-    double s = 0;
-    for(auto it : adj_list[i])
-    {
-      double z = weightMap[{i, it}];
-      z /= D[i];
-      s += z;
-      if(z > 0)
+      double d2 = weightMap[{i, it}]; // Get the weight of the required edge
+      d2 /= D[i]; // Find relative weightage of this edge
+      d1 += d2; // Add it's probability to the cumulative value
+      if(d2 > 0) // If there's a chance to go from i to it, we push it in our transition matrix
       {
-        P[i].push_back(std::make_pair(z,it));
-        Cum_P[i].push_back(std::make_pair(s,it));
+        P[i].push_back(std::make_pair(d2,it)); // Update transition matrix
+        Cum_P[i].push_back(std::make_pair(d1,it)); // Update the cumulative transition matrix
       }
     }
   }
 
-  auto stop3 = std::chrono::high_resolution_clock::now();
-  auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(stop3 - stop2);
-  std::cerr << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl;
+  #ifdef TIMER
 
-  scanf("%d\n", &z);;
-  b.resize(z);
-  J.resize(z);
-  for(int i = 0; i < z; i++)
+  auto stop3 = std::chrono::high_resolution_clock::now(); // Third breakpoint for timer
+  auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(stop3 - stop2); // Duration for setting up transition matrix
+  std::cerr << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+
+  #endif
+
+  /*****************************Take Column Vector Input***********************/
+
+
+  scanf("%d\n", &i1); // Input the dimension of column vector, this should equal n
+
+  if(i1 != n)
   {
-    scanf("%lf\n", &b[i]);
-    if(b[i] < 0)
+    throwError("Dimension mismatch between Graph with dimension: " + std::to_string(n) + " and b vector with dimension" + std::to_string(i1));
+  }
+
+  b.resize(i1); // Initialize b
+  j.resize(i1); // Initialize j
+
+  for(int i = 0; i < i1; i++)
+  {
+    scanf("%lf\n", &b[i]); // Taking input bi
+    if(b[i] < 0) // Finding the sink
     {
-      sb = b[i] * -1;
-      u = i;
+      sb = b[i] * -1; // Sum of all non-sink vertices
+      u = i; // Indentified u
     }
   }
-  double sum = 0;
-  for(int i = 0; i < z; i++)
+  double sum = 0; // Cumulative j
+  for(int i = 0; i < i1; i++)
   {
-    if(b[i] < 0)
+    if(b[i] < 0) // Sink vertex
     {
-      J[i] = 0;
+      j[i] = 0; // j_sink = 0 by definition
     }
     else
     {
-      J[i] = b[i]/sb;
+      j[i] = b[i]/sb; // Using definition of j
     }
-    if(J[i] > 0)
+    if(j[i] > 0)
     {
-      sum += J[i];
-      sources.push_back(std::make_pair(sum, i));
+      sum += j[i]; // Updating cumulative value
+      sources.push_back(std::make_pair(sum, i)); // Making cumulative probability distribution
     }
   }
 
-  //outcontainer(sources);
+  d1 = 0; // Culumative j
 
-  double temp = 0;
-  P[u].clear();
-  Cum_P[u].clear();
+  P[u].clear(); // Initializing P[u]
+  Cum_P[u].clear(); // Initializing Cum_P[u]
+
+  /*****************************Updating Transition Matrix for sink************/
 
   for(int i = 0; i < n; i++)
   {
-    if(J[i] > 0)
+    if(j[i] > 0)
     {
-      P[u].push_back(std::make_pair(J[i],i));
-      temp += J[i];
-      Cum_P[u].push_back(std::make_pair(temp,i));
+      P[u].push_back(std::make_pair(j[i],i)); // Push back non-zero j value into transition matrix
+      d1 += j[i]; // Push back non-zero j value into transition matrix
+      Cum_P[u].push_back(std::make_pair(d1,i)); // Build cumulative transition matrix for sink
     }
   }
 
-  std::cin >> eps;
+  std::cin >> eps; // Input the error parameter
 
-  auto stop4 = std::chrono::high_resolution_clock::now();
-  auto dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3);
-  //std::cerr << "Graph Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl;
+  #ifdef TIMER
+
+  stop4 = std::chrono::high_resolution_clock::now(); // Fourth breakpoint for timer
+  dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3); // Duration for taking column vector input
+  std::cerr << "Column Vector Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+
+  #endif
+
+}
+
+void bootstrap()
+{
+  if(N == -1)
+  {
+    N = 15 * n; // Default Initialization of the chain
+  }
+
+  std::unordered_map<int, int> Shat; // Represents the vertices we picked
+
+  for(int t = 0; t < N; t++)
+  {
+    int what = distSelector(sources); // Picking a source
+    if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end()) // No paths between source sink pair
+    {
+      generateHittingTable(what, u); // Generate a path between source and sink
+    }
+    int uhat = distSelector(HittingTable[std::make_pair(what,u)]); // Pick a vertex from the given distribution
+    Shat[uhat]++; // Increment counter for the chosen vertex
+  }
+  int maxv = -1; // Keeps check of maximum freq
+  int shat = -1; // Keeps track of best vertex
+  for(auto it : Shat)
+  {
+    if(maxv < it.second)
+    {
+      maxv = it.second; // Update new maximum
+      shat = it.first; // Update new winner
+    }
+  }
+  s = shat; // Assign chosen vertex to s
+}
+
+void runChain()
+{
+  X.resize(d, s);
+
+}
+
+void end()
+{
+  #ifdef TIMER
+
+  stop5 = std::chrono::high_resolution_clock::now(); // Final breakpoint for timer
+  dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4); // Duration for bootstrapping
+  std::cerr << "Bootstrapping Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+
+  dur6 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - start); // Complete duration for program
+  std::cerr << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+
+  #endif
+}
+
+int main()
+{
+
+  /*****************************FAST I/O OPTIMIZATION**************************/
+
+  std::ios_base::sync_with_stdio(false);
+  std::cin.tie(NULL);
+
+  /*****************************PROGRAM START**********************************/
+
+  srand(time(0));
+
+  init();
 
   bootstrap();
-  //std::cout << bootstrap() << std::endl;
 
-  auto stop5 = std::chrono::high_resolution_clock::now();
-  auto dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4);
-  std::cerr << "Graph Processing Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl;
-  auto dur6 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - start);
-  std::cerr << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl;
+  end();
 
 }

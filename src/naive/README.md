@@ -4,34 +4,14 @@
 
 This project has the following files:
 
-- `graph_gen.cpp` : Generates an unweighted, undirected graph probabilistically.
-  - Input : Number of edges; Probability of edge existence b/w any 2 nodes.
-  - Output : Weighted, undirected graph
-  - Status : Complete
-- `GTL.cpp` : Converts given graph into its corresponding laplacian matrix.
-  - Input : Weighted, undirected graph
-  - Output : Laplacian Matrix
-  - Status : Complete
-- `LTG.cpp`: Converts given laplacian matrix into its corresponding graph.
-  - Input : Laplacian Matrix
-  - Output : Weighted, undirected graph
+- `formatter.cpp`: Converts raw data into required format.
+  - Input : Raw data (List of edges)
+  - Output : Formatted data (Input for NaivePLW)
   - Status : Complete
 - `NaivePLW.cpp` : Implementation of the algorithm given by our paper.
   - Input : Hitting index; unweighted, undirected Graph; Edge weight function, **b** of L**x** = **b**, $\epsilon$: error param
   - Output :  Column vector **x**
-  - Status : Incomplete
-- `HittingTable.cpp` : Computes the hitting table for the given Laplacian matrix.
-  - Input : Transition Matrix P
-  - Output : Hitting Table Index
-  - Status : WorkInProgress
-- `standardSolver.py` : Standard solver for a system of linear equations to check for it's results.
-  - Input : Matrix L; Column vector **b**
-  - Output : Column vector **x** such that L**x** = **b** 
-  - Status : Complete
-- `TransitionMatrix.cpp` : Generates Transition matrix for given L, b
-  - Input : Column matrix L; Column vector **b**
-  - Output : Transition Matrix P
-  - Status : Complete
+  - Status : Working on Phase-2
 
 # Input format for PLW-SOLVE 
 
