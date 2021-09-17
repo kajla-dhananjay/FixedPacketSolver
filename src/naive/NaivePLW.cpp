@@ -52,9 +52,9 @@ double eps = 1; // Stores the bound on error required
 
 #ifdef TIMER // Declares variables for storing timestamps and durations if -DTIMER is passed as a flag
 
-std::chrono::time_point<std::chrono::high_resolution_clock> start;
-std::chrono::time_point<std::chrono::high_resolution_clock> stop1, stop2, stop3, stop4, stop5, stop6;
-std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, dur5;
+std::chrono::time_point<std::chrono::high_resolution_clock> start; // Starting Time
+std::chrono::time_point<std::chrono::high_resolution_clock> stop1, stop2, stop3, stop4, stop5, stop6; // Various Stop Times
+std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, dur5; // Various durations
 
 #endif
 
@@ -62,19 +62,20 @@ std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, 
 #ifdef PARALLEL
   class Timer{
   private:
-    int timeVal;
-    std::mutex mut;
+    int timeVal; // Indicates Current time
+    std::mutex mut; // Locks the clock
   public:
     Timer()
     {
-      timeVal = 0;
+      timeVal = 0; // Initialize currect clock to 0
     }
     int TimeInc()
     {
-      mut.lock();
-      return this->timeVal;
-      this->timeVal = this->timeVal + 1;
-      mut.unlock();
+      mut.lock(); // lock mutex for the clock
+      int tm = this->timeVal; // Store current time
+      this->timeVal = this->timeVal + 1; // Increment time
+      mut.unlock(); // Unlock the clock
+      return tm; // Return current time
     }
   };
 #endif
@@ -149,7 +150,7 @@ void runChain(); // Run Phase two
 
 void end(); // Completion Formalities
 
-/************************* Utility Functions **********************************/
+/************************* Utility Function Definitions ***********************/
 
 void DFS(int node, std::vector<int> &visited, int &cnt)
 {
@@ -208,15 +209,11 @@ T distSelector(const std::vector<std::pair<double, T> > &dist)
     return dist[0].second;
   }
 
-  int low = 0;
-  int high = i1-1;
-
-  int mid = 0;
+  int low = 0, high = i1-1, mid = 0; // Temp variables for binary search
 
   while(true) // Binary search for the interval of distribution in which d1 falls
   {
-    mid = low + high;
-    mid /= 2;
+    mid = (low + high)/2;
 
     if(high == low - 1)
     {
