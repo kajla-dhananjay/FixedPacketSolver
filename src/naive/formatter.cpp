@@ -151,5 +151,5 @@ int main()
     std::cout << it << std::endl;
   }
 
-  std::cout << "0.5123" << std::endl;
+  std::cout << "0.1123" << std::endl;
 }

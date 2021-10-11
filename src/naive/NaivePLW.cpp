@@ -39,9 +39,6 @@ int m; // Number of Edges in Graph
 int s; // Vertex chosen via bootstrapping indicating high stationary prob. state
 int u; // Stores the index of the sink vertex
 
-#ifdef PARALLEL
-  bool quit = false;
-#endif
 
 int timer = 0; // Timer for running the chain serially
 int N = -1; // Number of samples for bootstrapping
@@ -49,6 +46,164 @@ int d = 5; // Stores the nunber of chains to run
 
 double sb; // Stores the sum of non-sink column vectors
 double eps = 1; // Stores the bound on error required
+
+#ifdef PARALLEL
+
+class Stopper{
+private:
+  bool IsDone;
+public:
+  Stopper()
+  {
+    IsDone = false; // Initialize currect clock to 0
+  }
+  void Done()
+  {
+    IsDone = true;
+  }
+  bool canStop()
+  {
+    return IsDone;
+  }
+};
+Stopper *stop;
+/*
+class Timer{
+  private:
+    int offset; // Indicates Current time
+    std::set<int> setvals;
+    std::mutex mut; // Locks the clock
+  public:
+    Timer()
+    {
+      offset = 0;
+      setvals.clear(); // Initialize currect clock to 0
+    }
+    bool proceed(int v)
+    {
+      mut.lock();
+      bool flag = false;
+      if((int)setvals.size() == d)
+      {
+        setvals.clear();
+        offset++;
+        flag = true;
+      }
+      else if(setvals.find(v) == setvals.end())
+      {
+        setvals.insert(v);
+        flag = true;
+      }
+      mut.unlock();
+      return flag;
+    }
+    int getOffset()
+    {
+      return offset;
+    }
+  };
+Timer *timeStruct;
+*/
+class Channel{
+private:
+  int timeVal; // Global clock
+  int clock; // Countdown to limit queue size before processing
+  int timer; // Sets inital value of clock once processed
+  std::vector<int> Q; // Vertex occupancy
+  std::vector<double> mu; // Error bounding vector. Redundant?
+  std::set<int> inQueue; // All vertices that are currently waiting to be processed
+  std::queue<std::pair<int, int> > updates; // Updates waiting to be processed
+public:
+  int batches; //  Tells how many batches can the processing thread can go ahead wtih
+  Channel()
+  {
+    Q.resize(n,0); // Initially all queues empty
+    mu.resize(n,0); // Initalize mu
+    Q[s] = d; // Place all d packets at s
+    mu[s] = d; // Initialize mu
+    timer = 10; // Initialize timer
+    clock = timer; // Initiate clock counter to timer
+    timeVal = 0; // Initialize global clock to 0
+  }
+  bool canProceed(int chain)
+  {
+    bool r = (inQueue.find(chain) == inQueue.end()); // The chain already has a transition in the queue
+    #ifdef DEBUG
+      std::cout << "Chain number : " << chain << " asked for permission to go ahead and was" ;
+      if(r)
+      {
+        std::cout << " accpeted." << std::endl;
+      }
+      else
+      {
+        std::cout << " denied." << std::endl;
+      }
+    #endif
+    return r;
+  }
+  void pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
+  {
+    #ifdef DEBUG
+      std::cout << "Chain number : " << chain << " pushed a transition from: " << p.first << " to " << p.second << std::endl ;
+    #endif
+    inQueue.insert(chain); // Account for the transition in the queue
+    if(inQueue.size() == (size_t)d) // If all chains have transitions in the queue, then we can clear the chain
+    {
+      inQueue.clear(); // Clear the queue of all threads
+    }
+    updates.push(p); // Push transition in the queue
+    timeVal++; // Increment global time
+    clock--; // Decrement countdown
+    if(clock == 0)
+    {
+      batches++; // The queue can be processed for 'batches' number of batches
+      updates.push(std::make_pair(-1,timeVal)); // Update Dummy Transition to the queue indicating global time at this moment
+      clock = timer; // Reset the countdown
+    }
+  }
+  void process()
+  {
+    #ifdef DEBUG
+      std::cout << "Started Processing for " << batches << " number of batches" << std::endl ;
+    #endif
+    while(batches > 0)
+    {
+      batches--; // As this iteration will process one batch
+      double z = timeVal; // Current time
+      std::set<int> updatedQueues; // Keeps track of all queues that need to be updated
+      while(!updates.empty() && updates.front().first != -1) // Updates all transitions
+      {
+        std::pair<int, int> p = updates.front(); // Check out the front of the queue
+        updatedQueues.insert(p.first); // Update p.first as a vertex in need for queue updation
+        updatedQueues.insert(p.second); // Update p.second as a vertex in need for queue updation
+        Q[p.first]--; // The packet left p.first
+        Q[p.second]++; // The packet arrived at p.second
+        updates.pop(); // Pop the front of the queue
+      }
+      if(!updates.empty() && updates.front().first == -1)
+      {
+        z = updates.front().second; // Global time for the batch
+        updates.pop(); // Clear dummy transition
+      }
+      for(auto it : updatedQueues)
+      {
+        double r = Q[it]/z; // Average occupancy
+        mu[it] += r; // Update mu
+        #ifdef DEBUG
+          std::cout << "Value of change = " << r << std::endl;
+        #endif
+        if(r < eps)
+        {
+          stop->Done(); // Stop the chain
+          return;
+        }
+      }
+    }
+  }
+};
+Channel *chan;
+#endif
+
 
 #ifdef TIMER // Declares variables for storing timestamps and durations if -DTIMER is passed as a flag
 
@@ -58,40 +213,15 @@ std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, 
 
 #endif
 
-
-#ifdef PARALLEL
-  class Timer{
-  private:
-    int timeVal; // Indicates Current time
-    std::mutex mut; // Locks the clock
-  public:
-    Timer()
-    {
-      timeVal = 0; // Initialize currect clock to 0
-    }
-    int TimeInc()
-    {
-      mut.lock(); // lock mutex for the clock
-      int tm = this->timeVal; // Store current time
-      this->timeVal = this->timeVal + 1; // Increment time
-      mut.unlock(); // Unlock the clock
-      return tm; // Return current time
-    }
-  };
-#endif
-
 std::vector<int> X; // State vector for multi-dimension markov chain
 std::vector<int> Q; // Occupancy vector for each node
 std::vector<double> mu; // Error vector mu as per definition
 
 #ifdef PARALLEL
 
-std::vector<std::pair<std::mutex, int> > X_P; // State vector for multi-dimension markov chain
-std::vector<std::pair<std::mutex, int> > Q_P; // Occupancy vector for each node
-std::vector<std::pair<std::mutex, double> > mu_P; // Error vector mu as per definition
+std::vector<int> X_P; // State vector for multi-dimension markov chain
+
 #endif
-
-
 
 std::vector<double> b; // Column vector b as per definition
 std::vector<double> j; // Column vector j as per definition
@@ -109,10 +239,6 @@ std::vector<std::vector<std::pair<double, int> > > P, Cum_P; // Transition Matri
 std::map<std::pair<int, int>, double> weightMap; // Contains mapping from pair of nodes to their corresponding edge weight
 
 std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; // Stores the computed hitting table distributions for different pair of nodes
-
-#ifdef PARALLEL
-  Timer *timeStruct;
-#endif
 
 /************************* Function Prototypes ********************************/
 
@@ -132,9 +258,11 @@ T distSelector(const std::vector<std::pair<double, T> > &dist); // Sample from a
 
 void generateHittingTable(int start, int end); // Generates Hitting Table between the two given vertices
 
+#ifdef PARALLEL
 void runChainParallelInstance(); // An instance of running chain
+#endif
 
-/************************* Useful Functions ***********************************/
+/************************* Useful Functions Definitions ***********************/
 
 void init(); // Initializes the chain
 
@@ -150,7 +278,7 @@ void runChain(); // Run Phase two
 
 void end(); // Completion Formalities
 
-/************************* Utility Function Definitions ***********************/
+/************************* Utility Function  **********************************/
 
 void DFS(int node, std::vector<int> &visited, int &cnt)
 {
@@ -170,7 +298,7 @@ void DFS(int node, std::vector<int> &visited, int &cnt)
 bool checkConnected()
 {
   std::vector<int> visited(n,-1); // This vector keeps track of visited nodes
-  int cnt = 0; // Counter to keep track of visited
+  int cnt = 0; // Counter to keep track of number of visited nodes
   DFS(0, visited, cnt); // DFS to update visited counter
   return (cnt == n); // Return true if all nodes have been visited, false otherwise
 }
@@ -192,7 +320,7 @@ bool cumDist(const std::vector<std::pair<double, T> > &dist)
 
 void throwError(std::string err)
 {
-  std::cerr << " Fatal Error: " << err << std::endl;
+  std::cout << " Fatal Error: " << err << std::endl;
   exit(1);
 }
 
@@ -278,55 +406,47 @@ void generateHittingTable(int start, int end)
 
 #ifdef PARALLEL
 
-void runChainParallelInstance()
+void *runChainParallelInstance(void* chain_number)
 {
-  int i1, i2, i3;
-  double d1, d2, d3;
-  while(!quit)
+  int *dim_val = (int*)chain_number; //Extract chain number from void pointer
+  int i1, i2; // Temporary variables
+  i1 = *dim_val; // i1 is the chain number for this thread
+  #ifdef DEBUG
+    std::cout << "Chain number : " << i1 << " started" << std::endl;
+  #endif
+  return NULL;
+  while(true)
   {
-    i1 = ((rand()) % d); // Choosing a dimension to update
-    X_P[i1].first.lock(); // Lock our dimension
-
-    d1 = rand(); // Check whether the update is lazy
-    d1 /= RAND_MAX;
-
-    i3 = timeStruct->TimeInc();
-
-    if(d1 <= 0.5)
+    if(chan->canProceed(i1)) // If queue allows us to make a transition, we go ahead
     {
-      i2 = distSelector(Cum_P[X_P[i1].second]); // Select new vertex from distribution
+      if(stop->canStop()) // If infinite norm of error is bounded, we stop the chain
+      {
+        #ifdef DEBUG
+          std::cout << "Stop signal recieved at thread with chain : " << i1 << std::endl;
+        #endif
+        break;
+      }
 
-      Q_P[i2].first.lock();
-      Q_P[X_P[i1].second].first.lock();
-
-      Q_P[i2].second++; // Increment occupancy for new vertex
-      Q_P[X_P[i1].second].second--; // Decrement occupancy for previous vertex
-
-      d2 = ((double)Q_P[X_P[i1].second].second)/((double)i3); // Increment in mu for previous vertex
-      d3 = ((double)Q_P[i2].second)/((double)i3); // Increment in mu for new vertex
-
-      mu_P[X_P[i1].second].first.lock();
-      mu_P[i2].first.lock();
-
-      mu_P[X_P[i1].second].second += d2; // Update mu[previous vertex]
-      mu_P[i2].second += d3; // Update mu[new vertex]
-
-      Q_P[i2].first.unlock();
-      Q_P[X_P[i1].second].first.unlock();
-
-      X_P[i1].second = i2; // Update state of multi-dim markov chain
+      i2 = distSelector(Cum_P[X_P[i1]]); // Find the next vertex
+      chan->pushUpdate(i1, std::make_pair(X_P[i1], i2)); // Push update
+      X_P[i1] = i2; // Update the chain
     }
-
-    X_P[i1].first.unlock(); // Unock our dimension
-
-    if(d2 < eps || d3 < eps)
-    {
-      return;
-    }
-
   }
+  pthread_exit(NULL);
 }
 
+void* processorThread(void *x)
+{
+  #ifdef DEBUG
+    std::cout << "Processor Thread Started" << std::endl;
+  #endif
+  return NULL;
+  while(chan->batches > 0 && !stop->canStop())
+  {
+    chan->process();
+  }
+  pthread_exit(NULL);
+}
 #endif
 
 void init()
@@ -352,9 +472,9 @@ void init()
 
   stop1 = std::chrono::high_resolution_clock::now(); // First breakpoint for timer
   dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start); // Duration for taking in initial input and initializing vectors
-  std::cerr << "Base Input Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Base Input Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl; // Print duration on commandline
 
-    #endif
+  #endif
 
   /*****************************Take Graph Input*******************************/
 
@@ -364,7 +484,7 @@ void init()
     adj_list[i1].push_back(i2); // Setup adjacency list
     adj_list[i2].push_back(i1); // Setup adjacency list
     weightMap[std::make_pair(i1, i2)] = d1; // Map given edge weight
-    weightMap[std::make_pair(i2,i1)] = d1; // Map given edge weight
+    weightMap[std::make_pair(i2, i1)] = d1; // Map given edge weight
     D[i1] += d1; // Add weight of given edges to total node weight
     D[i2] += d1; // Add weight of given edges to total node weight
     edges[i] = std::make_tuple(i1,i2,d1); // append given edge to the edges
@@ -379,7 +499,7 @@ void init()
 
   stop2 = std::chrono::high_resolution_clock::now(); // Second breakpoint for timer
   dur2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - stop1); // Duration for taking in graph input
-  std::cerr << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
 
   #endif
 
@@ -411,7 +531,7 @@ void init()
 
   auto stop3 = std::chrono::high_resolution_clock::now(); // Third breakpoint for timer
   auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(stop3 - stop2); // Duration for setting up transition matrix
-  std::cerr << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
 
   #endif
 
@@ -438,6 +558,7 @@ void init()
     }
   }
   double sum = 0; // Cumulative j
+
   for(int i = 0; i < i1; i++)
   {
     if(b[i] < 0) // Sink vertex
@@ -473,12 +594,12 @@ void init()
   }
 
   std::cin >> eps; // Input the error parameter
-
+  std::cout << eps << std::endl;
   #ifdef TIMER
 
   stop4 = std::chrono::high_resolution_clock::now(); // Fourth breakpoint for timer
   dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3); // Duration for taking column vector input
-  std::cerr << "Column Vector Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Column Vector Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
 
   #endif
 
@@ -520,7 +641,7 @@ void runChainSerial()
 {
   int i1, i2;
   double d1, d2, d3;
-
+  timer = 0;
   while(true)
   {
     timer++; // t = t+1
@@ -547,6 +668,7 @@ void runChainSerial()
 
     if(d2 < eps || d3 < eps)
     {
+      std::cout << d2 << ' ' << d3 << ' ' << eps << "| Time taken: " << timer << std::endl;
       return;
     }
   }
@@ -554,9 +676,42 @@ void runChainSerial()
 
 #ifdef PARALLEL
 
+
 void runChainParallel()
 {
+  stop = new Stopper();
+  chan = new Channel();
+  #ifdef DEBUG
+    std::cout << "runChainParallel Started" << std::endl;
+  #endif
+  std::vector<pthread_t> threads(d);
+  pthread_t processor;
+  for(int i = 0; i < 1; i++)
+  {
+    int zzz = i;
+    int *xxxx = &zzz;
+    void *y = (void*)xxxx;
+    #ifdef DEBUG
+      std::cout << "Starting Thread " << *((int*)y) << std::endl;
+    #endif
 
+    int err = pthread_create(&(threads[0]), NULL, runChainParallelInstance, y);
+    if (err != 0)
+    {
+      std::cout << "Error creating thread at index: " << i << "\nExiting" << std::endl;
+      exit(1);
+    }
+  }
+  int err = pthread_create(&processor, NULL, processorThread, NULL);
+  if (err != 0)
+  {
+    std::cout << "Error creating processor thread\nExiting" << std::endl;
+    exit(1);
+  }
+  for(int i = 0; i < d; i++)
+  {
+    pthread_join (threads[i], NULL);
+  }
 }
 
 #endif
@@ -567,19 +722,16 @@ void runChain()
 
 
   #ifdef PARALLEL
-    std::mutex temp;
-    X_P.resize(d, std::make_pair(temp, 0));
-    Q_P.resize(n, std::make_pair(temp, 0));
-    mu_P.resize(n, std::make_pair(temp, 0.0));
-    Q_P[s].second = d;
-    timeStruct = new Timer();
+    X_P.resize(d,s);
+    #ifdef DEBUG
+      std::cout << "runChain Started" << std::endl;
+    #endif
     runChainParallel();
     return;
   #endif
   X.resize(d, s);
   Q.resize(n, 0);
   mu.resize(n,0);
-  timer = 0;
   Q[s] = d;
   runChainSerial();
   return;
@@ -587,14 +739,15 @@ void runChain()
 
 void end()
 {
+  std::cout << s << std::endl;
   #ifdef TIMER
 
   stop5 = std::chrono::high_resolution_clock::now(); // Final breakpoint for timer
   dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4); // Duration for bootstrapping
-  std::cerr << "Bootstrapping Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Bootstrapping Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
 
   dur6 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - start); // Complete duration for program
-  std::cerr << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
+  std::cout << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
 
   #endif
 }
@@ -604,18 +757,35 @@ int main()
 
   /*****************************Fast I/O Optimization**************************/
 
-  std::ios_base::sync_with_stdio(false);
-  std::cin.tie(NULL);
+  //std::ios_base::sync_with_stdio(false);
+  //std::cin.tie(NULL);
 
   /*****************************Program Start**********************************/
 
   srand(time(0));
 
-
   init();
+
+  #ifdef DEBUG
+    std::cout << "Completed Initialization" << std::endl;
+  #endif
 
   bootstrap();
 
+  #ifdef DEBUG
+    std::cout << "Completed Bootstrapping" << std::endl;
+  #endif
+
+  runChain();
+
+  #ifdef DEBUG
+    std::cout << "Completed Running the Chain" << std::endl;
+  #endif
+
   end();
+
+  #ifdef DEBUG
+    std::cout << "Completed Final formalities" << std::endl;
+  #endif
 
 }
