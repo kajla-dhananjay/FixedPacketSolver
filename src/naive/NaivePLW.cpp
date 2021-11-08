@@ -47,161 +47,213 @@ int d = 5; // Stores the nunber of chains to run
 double sb; // Stores the sum of non-sink column vectors
 double eps = 1; // Stores the bound on error required
 
+std::mutex io_lock;
+
 #ifdef PARALLEL
 
-class Stopper{
+template<typename T>
+class indexedPriorityQueue{
 private:
-  bool IsDone;
+  int size;
+  std::multiset<T> timer;
+  std::vector<T> values;
 public:
-  Stopper()
+  indexedPriorityQueue()
   {
-    IsDone = false; // Initialize currect clock to 0
+    size = 0;
   }
-  void Done()
+  indexedPriorityQueue(int sz)
   {
-    IsDone = true;
+    size = sz;
+    values.resize(size, 0);
+    for(auto it : values)
+    {
+      timer.insert(it);
+    }
   }
-  bool canStop()
+  indexedPriorityQueue(int sz, std::vector<T> v)
   {
-    return IsDone;
+    size = sz;
+    values = v;
+    timer.clear();
+    for(auto it : values)
+    {
+      timer.insert(it);
+    }
+  }
+  T getMax()
+  {
+    if(size == 0)
+    {
+      return -1;
+    }
+    return *(timer.rbegin());
+  }
+  T getVal(int index)
+  {
+    if(index < 0 || index >= size)
+    {
+      return -1;
+    }
+    return values[index];
+  }
+  bool setVal(int index, T value)
+  {
+    if(index < 0 || index >= size)
+    {
+      return false;
+    }
+    timer.erase(values[index]);
+    values[index] = value;
+    timer.insert(value);
+    return true;
   }
 };
-Stopper *stop;
-/*
-class Timer{
-  private:
-    int offset; // Indicates Current time
-    std::set<int> setvals;
-    std::mutex mut; // Locks the clock
-  public:
-    Timer()
-    {
-      offset = 0;
-      setvals.clear(); // Initialize currect clock to 0
-    }
-    bool proceed(int v)
-    {
-      mut.lock();
-      bool flag = false;
-      if((int)setvals.size() == d)
-      {
-        setvals.clear();
-        offset++;
-        flag = true;
-      }
-      else if(setvals.find(v) == setvals.end())
-      {
-        setvals.insert(v);
-        flag = true;
-      }
-      mut.unlock();
-      return flag;
-    }
-    int getOffset()
-    {
-      return offset;
-    }
-  };
-Timer *timeStruct;
-*/
-class Channel{
+
+class Channel
+{
 private:
-  int timeVal; // Global clock
-  int clock; // Countdown to limit queue size before processing
-  int timer; // Sets inital value of clock once processed
+  int T; // Global clock
   std::vector<int> Q; // Vertex occupancy
-  std::vector<double> mu; // Error bounding vector. Redundant?
+  std::vector<double> mu;
+  indexedPriorityQueue<double>* tm;
   std::set<int> inQueue; // All vertices that are currently waiting to be processed
-  std::queue<std::pair<int, int> > updates; // Updates waiting to be processed
+  std::queue<std::pair<int, int> > R; // Updates waiting to be processed
+  std::vector<std::queue<std::tuple<int, int, int, int> > > S;
+  std::vector<int> L;
+  bool isDone;
+  std::mutex m;
 public:
   int batches; //  Tells how many batches can the processing thread can go ahead wtih
   Channel()
   {
+    T = 0; // Initialize global clock to 0
     Q.resize(n,0); // Initially all queues empty
-    mu.resize(n,0); // Initalize mu
+    S.resize(n);
+    L.resize(n,0);
+    mu.resize(n, 0);
     Q[s] = d; // Place all d packets at s
-    mu[s] = d; // Initialize mu
-    timer = 10; // Initialize timer
-    clock = timer; // Initiate clock counter to timer
-    timeVal = 0; // Initialize global clock to 0
+    tm = new indexedPriorityQueue<double>(n);
+    if(tm->setVal(s, INT_MAX) == false)
+    {
+      std::cout << "Error Initializing timer" << std::endl;
+    }
+    isDone = false;
   }
   bool canProceed(int chain)
   {
     bool r = (inQueue.find(chain) == inQueue.end()); // The chain already has a transition in the queue
     #ifdef DEBUG
-      std::cout << "Chain number : " << chain << " asked for permission to go ahead and was" ;
-      if(r)
+      io_lock.lock();
+      if(r && !isDone)
       {
-        std::cout << " accpeted." << std::endl;
+        //std::cout << "Chain number : " << chain << " asked for permission to go ahead and was accepted" << std::endl ;
       }
-      else
-      {
-        std::cout << " denied." << std::endl;
-      }
+      io_lock.unlock();
     #endif
     return r;
+  }
+  bool canStop()
+  {
+    return isDone;
   }
   void pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
   {
     #ifdef DEBUG
-      std::cout << "Chain number : " << chain << " pushed a transition from: " << p.first << " to " << p.second << std::endl ;
+      io_lock.lock();
+      if(!isDone)
+      {
+        std::cout << "Chain number : " << chain << " pushed a transition from: " << p.first << " to " << p.second << std::endl ;
+      }
+      io_lock.unlock();
     #endif
-    inQueue.insert(chain); // Account for the transition in the queue
+    inQueue.insert(chain);
+    R.push(p); // Push transition in the queue
+    m.lock();
     if(inQueue.size() == (size_t)d) // If all chains have transitions in the queue, then we can clear the chain
     {
+      #ifdef DEBUG
+        io_lock.lock();
+        std::cout << "Clearing the queue" << std::endl ;
+        io_lock.unlock();
+      #endif
       inQueue.clear(); // Clear the queue of all threads
+      R.push({-1,-1});
+      batches++;
+      process();
     }
-    updates.push(p); // Push transition in the queue
-    timeVal++; // Increment global time
-    clock--; // Decrement countdown
-    if(clock == 0)
-    {
-      batches++; // The queue can be processed for 'batches' number of batches
-      updates.push(std::make_pair(-1,timeVal)); // Update Dummy Transition to the queue indicating global time at this moment
-      clock = timer; // Reset the countdown
-    }
+    m.unlock();
   }
   void process()
   {
     #ifdef DEBUG
+      io_lock.lock();
       std::cout << "Started Processing for " << batches << " number of batches" << std::endl ;
+      io_lock.unlock();
     #endif
+    if(canStop())
+    {
+      return;
+    }
     while(batches > 0)
     {
       batches--; // As this iteration will process one batch
-      double z = timeVal; // Current time
-      std::set<int> updatedQueues; // Keeps track of all queues that need to be updated
-      while(!updates.empty() && updates.front().first != -1) // Updates all transitions
+      std::set<int> updatedVertices;
+      while(!R.empty() && R.front().first != -1) // Updates all transitions
       {
-        std::pair<int, int> p = updates.front(); // Check out the front of the queue
-        updatedQueues.insert(p.first); // Update p.first as a vertex in need for queue updation
-        updatedQueues.insert(p.second); // Update p.second as a vertex in need for queue updation
+        T++;
+        std::pair<int, int> p = R.front(); // Check out the front of the queue
+        R.pop(); // Pop the front of the queue
+        S[p.first].push(std::make_tuple(Q[p.first]-1, Q[p.first], T, L[p.first]));
+        S[p.second].push(std::make_tuple(Q[p.second]+1, Q[p.second], T, L[p.second]));
         Q[p.first]--; // The packet left p.first
         Q[p.second]++; // The packet arrived at p.second
-        updates.pop(); // Pop the front of the queue
+        L[p.first] = T;
+        L[p.second] = T;
+        updatedVertices.insert(p.first);
+        updatedVertices.insert(p.second);
       }
-      if(!updates.empty() && updates.front().first == -1)
+      while(!R.empty() && R.front().first == -1)
       {
-        z = updates.front().second; // Global time for the batch
-        updates.pop(); // Clear dummy transition
+        R.pop(); // Clear dummy transition
       }
-      for(auto it : updatedQueues)
+      for(auto w : updatedVertices)
       {
-        double r = Q[it]/z; // Average occupancy
-        mu[it] += r; // Update mu
-        #ifdef DEBUG
-          std::cout << "Value of change = " << r << std::endl;
-        #endif
-        if(r < eps)
+        while(!S[w].empty())
         {
-          stop->Done(); // Stop the chain
-          return;
+          auto s = S[w].front();
+          S[w].pop();
+          int nq = std::get<0>(s);
+          int oq = std::get<1>(s);
+          int nt = std::get<2>(s);
+          int ot = std::get<3>(s);
+          double z = mu[w] * ot + oq * (nt - ot - 1) + nq;
+          z /= nt;
+          mu[w] = z;
+          double disc = 1 + 4 * ((abs(nq-mu[w]) * ot)/eps);
+          double temp = sqrt(disc);
+          temp += 1;
+          temp /= 2;
+          tm->setVal(w, temp);
+          #ifdef DEBUG
+            io_lock.lock();
+            std::cout << "Timer for: " << w << " changed to: " << temp << std::endl;
+            std::cout << "Time now: " << T << ", time to end: " << tm->getMax() << std::endl ;
+            io_lock.unlock();
+          #endif
         }
+      }
+      if(tm->getMax() <= T)
+      {
+        isDone = true;
       }
     }
   }
 };
 Channel *chan;
+
+std::vector<int> X_P; // State vector for multi-dimension markov chain
+
 #endif
 
 
@@ -213,15 +265,12 @@ std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, 
 
 #endif
 
+
+std::vector<int> identity;
 std::vector<int> X; // State vector for multi-dimension markov chain
 std::vector<int> Q; // Occupancy vector for each node
 std::vector<double> mu; // Error vector mu as per definition
 
-#ifdef PARALLEL
-
-std::vector<int> X_P; // State vector for multi-dimension markov chain
-
-#endif
 
 std::vector<double> b; // Column vector b as per definition
 std::vector<double> j; // Column vector j as per definition
@@ -412,17 +461,19 @@ void *runChainParallelInstance(void* chain_number)
   int i1, i2; // Temporary variables
   i1 = *dim_val; // i1 is the chain number for this thread
   #ifdef DEBUG
-    std::cout << "Chain number : " << i1 << " started" << std::endl;
+    io_lock.lock();
+    std::string s = "Started Running Chain: " + std::to_string(i1) + "\n";
+    std::cerr << s;
+    io_lock.unlock();
   #endif
-  return NULL;
   while(true)
   {
     if(chan->canProceed(i1)) // If queue allows us to make a transition, we go ahead
     {
-      if(stop->canStop()) // If infinite norm of error is bounded, we stop the chain
+      if(chan->canStop()) // If infinite norm of error is bounded, we stop the chain
       {
         #ifdef DEBUG
-          std::cout << "Stop signal recieved at thread with chain : " << i1 << std::endl;
+          //std::cout << "Stop signal recieved at thread with chain number: " << i1 << std::endl;
         #endif
         break;
       }
@@ -430,23 +481,12 @@ void *runChainParallelInstance(void* chain_number)
       i2 = distSelector(Cum_P[X_P[i1]]); // Find the next vertex
       chan->pushUpdate(i1, std::make_pair(X_P[i1], i2)); // Push update
       X_P[i1] = i2; // Update the chain
+
     }
   }
   pthread_exit(NULL);
 }
 
-void* processorThread(void *x)
-{
-  #ifdef DEBUG
-    std::cout << "Processor Thread Started" << std::endl;
-  #endif
-  return NULL;
-  while(chan->batches > 0 && !stop->canStop())
-  {
-    chan->process();
-  }
-  pthread_exit(NULL);
-}
 #endif
 
 void init()
@@ -594,7 +634,7 @@ void init()
   }
 
   std::cin >> eps; // Input the error parameter
-  std::cout << eps << std::endl;
+  //std::cout << eps << std::endl;
   #ifdef TIMER
 
   stop4 = std::chrono::high_resolution_clock::now(); // Fourth breakpoint for timer
@@ -679,38 +719,35 @@ void runChainSerial()
 
 void runChainParallel()
 {
-  stop = new Stopper();
   chan = new Channel();
   #ifdef DEBUG
+    io_lock.lock();
     std::cout << "runChainParallel Started" << std::endl;
+    io_lock.unlock();
   #endif
   std::vector<pthread_t> threads(d);
-  pthread_t processor;
-  for(int i = 0; i < 1; i++)
-  {
-    int zzz = i;
-    int *xxxx = &zzz;
-    void *y = (void*)xxxx;
-    #ifdef DEBUG
-      std::cout << "Starting Thread " << *((int*)y) << std::endl;
-    #endif
+  identity.resize(d);
 
-    int err = pthread_create(&(threads[0]), NULL, runChainParallelInstance, y);
+  for(int i = 0; i < d; i++)
+  {
+    identity[i] = i;
+    #ifdef DEBUG
+      io_lock.lock();
+      std::cout << "Starting Thread " << *((int*)((void*)&identity[i])) << std::endl;
+      io_lock.unlock();
+    #endif
+    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, (void*)&identity[i]);
     if (err != 0)
     {
+      io_lock.lock();
       std::cout << "Error creating thread at index: " << i << "\nExiting" << std::endl;
+      io_lock.unlock();
       exit(1);
     }
   }
-  int err = pthread_create(&processor, NULL, processorThread, NULL);
-  if (err != 0)
+  while(!chan->canStop())
   {
-    std::cout << "Error creating processor thread\nExiting" << std::endl;
-    exit(1);
-  }
-  for(int i = 0; i < d; i++)
-  {
-    pthread_join (threads[i], NULL);
+    continue;
   }
 }
 
@@ -719,7 +756,6 @@ void runChainParallel()
 void runChain()
 {
   /***************************** Initialization *******************************/
-
 
   #ifdef PARALLEL
     X_P.resize(d,s);
@@ -739,7 +775,7 @@ void runChain()
 
 void end()
 {
-  std::cout << s << std::endl;
+  //std::cout << s << std::endl;
   #ifdef TIMER
 
   stop5 = std::chrono::high_resolution_clock::now(); // Final breakpoint for timer
@@ -767,25 +803,33 @@ int main()
   init();
 
   #ifdef DEBUG
+    io_lock.lock();
     std::cout << "Completed Initialization" << std::endl;
+    io_lock.unlock();
   #endif
 
   bootstrap();
 
   #ifdef DEBUG
+    io_lock.lock();
     std::cout << "Completed Bootstrapping" << std::endl;
+    io_lock.unlock();
   #endif
 
   runChain();
 
   #ifdef DEBUG
+    io_lock.lock();
     std::cout << "Completed Running the Chain" << std::endl;
+    io_lock.unlock();
   #endif
 
   end();
 
   #ifdef DEBUG
+    io_lock.lock();
     std::cout << "Completed Final formalities" << std::endl;
+    io_lock.unlock();
   #endif
 
 }
