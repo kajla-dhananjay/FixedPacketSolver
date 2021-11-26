@@ -1,0 +1,214 @@
+\DoxyHorRuler{0}
+
+
+This project has the following files\+:
+
+
+\begin{DoxyItemize}
+\item {\ttfamily formatter.\+cpp}\+: Converts raw data into required format.
+\begin{DoxyItemize}
+\item Input \+: Raw data (List of edges)
+\item Output \+: Formatted data (Input for Naive\+PLW)
+\item Status \+: Complete
+\end{DoxyItemize}
+\item {\ttfamily \mbox{\hyperlink{NaivePLW_8cpp}{Naive\+PLW.\+cpp}}} \+: Implementation of the algorithm given by our paper.
+\begin{DoxyItemize}
+\item Input \+: Hitting index; unweighted, undirected Graph; Edge weight function, {\bfseries{b}} of L$\ast$$\ast$x$\ast$$\ast$ = {\bfseries{b}}, \$\textbackslash{}epsilon\$\+: error param
+\item Output \+: Column vector {\bfseries{x}}
+\item Status \+: Working on Phase-\/2
+\end{DoxyItemize}
+\end{DoxyItemize}\hypertarget{md_src_naive_README_autotoc_md2}{}\doxysection{Input format for PLW-\/\+SOLVE}\label{md_src_naive_README_autotoc_md2}
+\DoxyHorRuler{0}
+
+
+The Input for PLW-\/\+SOLVE is formatted as\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<G> // G is the undirected, weighted graph corresponding to L}
+\DoxyCodeLine{<b> // b is the column vector in Lx = b}
+\DoxyCodeLine{<epsilon> // epsilon is the error parameter for the algorithm's termination}
+
+\end{DoxyCode}
+
+
+or as\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{0 // Denotes Debug/Analysis mode}
+\DoxyCodeLine{<G> // G is the undirected, weighted graph corresponding to L}
+\DoxyCodeLine{<b> // b is the column vector in Lx = b}
+\DoxyCodeLine{<epsilon> // epsilon is the error parameter for the algorithm's termination}
+\DoxyCodeLine{<x> // x is the final solution to Lx = b, computed through standard solvers}
+
+\end{DoxyCode}
+
+
+Note the below protocol for the exact formats.
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md5}{}\doxysection{Data Format for PLW-\/\+SOLVE Entities}\label{md_src_naive_README_autotoc_md5}
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md7}{}\doxysubsection{Hash\+Maps}\label{md_src_naive_README_autotoc_md7}
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md9}{}\doxysubsubsection{Hitting Table Index}\label{md_src_naive_README_autotoc_md9}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of nodes>}
+\DoxyCodeLine{<start node> <end node> <indexed node> <occurences> // 1st Entry}
+\DoxyCodeLine{<start node> <end node> <indexed node> <occurences> // 2nd Entry}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<start node> <end node> <indexed node> <occurences> // <number of nodes> \string^ 3 th Entry}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md12}{}\doxysubsection{Graphs}\label{md_src_naive_README_autotoc_md12}
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md14}{}\doxysubsubsection{Unweighted \& Undirected}\label{md_src_naive_README_autotoc_md14}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of nodes>}
+\DoxyCodeLine{<number of edges>}
+\DoxyCodeLine{<node\_1> <node\_2> //edge number 1}
+\DoxyCodeLine{<node\_1> <node\_2> //edge number 2}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<node\_1> <node\_2> //edge number <number of edges>}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md17}{}\doxysubsubsection{Weighted \& Undirected}\label{md_src_naive_README_autotoc_md17}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of nodes>}
+\DoxyCodeLine{<number of edges>}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number 1}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number 2}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number <number of edges>}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md21}{}\doxysubsection{Matrices}\label{md_src_naive_README_autotoc_md21}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of rows>}
+\DoxyCodeLine{<number of columns>}
+\DoxyCodeLine{<E> <E> <E> <E> ... <E> //space seperated row 1 of the matrix}
+\DoxyCodeLine{<E> <E> <E> <E> ... <E> //space seperated row 2 of the matrix}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<E> <E> <E> <E> ... <E> //space seperated row <number of rows> of the matrix}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md25}{}\doxysubsection{Vectors and Functions}\label{md_src_naive_README_autotoc_md25}
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md27}{}\doxysubsubsection{Weight Vector}\label{md_src_naive_README_autotoc_md27}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of edges> //number of edges}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number 1}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number 2}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<node\_1> <node\_2> <weight> //edge number <number of edges>}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md30}{}\doxysubsubsection{Column Vector for system of linear equations ($<$strong$>$b$<$/strong$>$)}\label{md_src_naive_README_autotoc_md30}
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<number of entries in vector> //number of vector entries}
+\DoxyCodeLine{<element> // First element}
+\DoxyCodeLine{<element> // Second element}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{...}
+\DoxyCodeLine{<element> // <number of entries in vector>th element}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md_src_naive_README_autotoc_md34}{}\doxysubsection{Singleton Values}\label{md_src_naive_README_autotoc_md34}
+\DoxyHorRuler{0}
+
+
+Error Parameter ($\ast$$\ast$\$\textbackslash{}epsilon\$$\ast$$\ast$)
+
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<epsilon> //Value of error parameter}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+
+
+Number of samples(\$\+N\$)
+
+\DoxyHorRuler{0}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<Number of samples> //Total number of samples}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+
+
+\DoxyHorRuler{0}
+ 

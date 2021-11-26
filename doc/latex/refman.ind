@@ -1,0 +1,72 @@
+\begin{theindex}
+
+  \item {bootstrap}
+    \subitem {NaivePLW.cpp}, \hyperpage{7}
+
+  \indexspace
+
+  \item {checkConnected}
+    \subitem {NaivePLW.cpp}, \hyperpage{8}
+  \item {cumDist}
+    \subitem {NaivePLW.cpp}, \hyperpage{8}
+
+  \indexspace
+
+  \item {DFS}
+    \subitem {NaivePLW.cpp}, \hyperpage{8}
+  \item {distSelector}
+    \subitem {NaivePLW.cpp}, \hyperpage{9}
+
+  \indexspace
+
+  \item {end}
+    \subitem {NaivePLW.cpp}, \hyperpage{9}
+
+  \indexspace
+
+  \item {generateHittingTable}
+    \subitem {NaivePLW.cpp}, \hyperpage{9}
+
+  \indexspace
+
+  \item {init}
+    \subitem {NaivePLW.cpp}, \hyperpage{10}
+
+  \indexspace
+
+  \item {main}
+    \subitem {NaivePLW.cpp}, \hyperpage{11}
+
+  \indexspace
+
+  \item {NaivePLW.cpp}
+    \subitem {bootstrap}, \hyperpage{7}
+    \subitem {checkConnected}, \hyperpage{8}
+    \subitem {cumDist}, \hyperpage{8}
+    \subitem {DFS}, \hyperpage{8}
+    \subitem {distSelector}, \hyperpage{9}
+    \subitem {end}, \hyperpage{9}
+    \subitem {generateHittingTable}, \hyperpage{9}
+    \subitem {init}, \hyperpage{10}
+    \subitem {main}, \hyperpage{11}
+    \subitem {runChain}, \hyperpage{11}
+    \subitem {runChainSerial}, \hyperpage{11}
+    \subitem {throwError}, \hyperpage{11}
+
+  \indexspace
+
+  \item {runChain}
+    \subitem {NaivePLW.cpp}, \hyperpage{11}
+  \item {runChainSerial}
+    \subitem {NaivePLW.cpp}, \hyperpage{11}
+
+  \indexspace
+
+  \item {src/naive/NaivePLW.cpp}, \hyperpage{5}
+
+  \indexspace
+
+  \item {throwError}
+    \subitem {NaivePLW.cpp}, \hyperpage{11}
+
+\end{theindex}

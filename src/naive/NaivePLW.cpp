@@ -1,3 +1,14 @@
+/**
+ * @file NaivePLW.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief One-sink Laplacian Solver Using Random Walks
+ * @version 0.5
+ * @date 2021-11-22
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
 /************************* Standard libraries Import **************************/
 
 #include<bits/stdc++.h>
@@ -6,157 +17,234 @@
 
 /************************* Basic Macros ***************************************/
 
-#define nll "" //empty string abbr
-#define br " " //space abbr
-#define nl std::endl //newline abbr
+#define nll "" ///< empty string alias
+#define br " " ///< space alias
+#define nl std::endl ///< newline alias
 
 /************************* Input Macros ***************************************/
 
-#define in(a) std::cin >> a; //single input abbr
-#define in2(a, b) std::cin >> a >> b; // ...
-#define in3(a, b, c) std::cin >> a >> b >> c; // ...
+#define in(a) std::cin >> a; ///< single input alias
+#define in2(a, b) std::cin >> a >> b; ///< double input alias
+#define in3(a, b, c) std::cin >> a >> b >> c; ///< triple input alias
 
 /************************* Output Macros ***************************************/
 
-#define out(a) std::cout << a; // set output
-#define out2(a, b) std::cout <<  a << br <<  b; // ...
-#define out3(a, b, c) std::cout <<  a << br <<  b << br <<  c; // ..
+#define out(a) std::cout << a; ///< single output alias
+#define out2(a, b) std::cout <<  a << br <<  b; ///< double output alias
+#define out3(a, b, c) std::cout <<  a << br <<  b << br <<  c; ///< triple output alias
 
-#define outs(a) out2(a,nll) // ...
-#define outn(a) std::cout << a << nl; // ...
+#define outs(a) out2(a,nll) ///< output with space alias
+#define outn(a) std::cout << a << nl; ///< output with newline alias
 
 /************************* Vector I/O Macros ***********************************/
 
-template<typename T> inline void incontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){in(v[i]);}} // Inputs in space separated vectors
-template<typename T> inline void outcontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){outs(v[i]);}out(nl);} // Outputs space separated vectors
-template<typename T> inline void inmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){for(size_t j = 0; j < v[i].size(); j++){in(v[i][j])}}} // Inputs in space separated entries of newline separated vectors forming the matrix
-template<typename T> inline void outmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){outcontainer(v[i]); out(nl);}} // Outputs the matrix
+template<typename T> inline void incontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){in(v[i]);}} ///< Inputs space separated dynamic array
+template<typename T> inline void outcontainer(std::vector<T> &v) {for(size_t i = 0; i < v.size(); i++){outs(v[i]);}out(nl);} ///< Outputs space separated dynamic array
+template<typename T> inline void inmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){for(size_t j = 0; j < v[i].size(); j++){in(v[i][j])}}} ///< Inputs space separated entries of newline separated dynamic arrays forming a matrix
+template<typename T> inline void outmatrix(std::vector<std::vector<T> > & v) {for(size_t i = 0; i < v.size(); i++){outcontainer(v[i]); out(nl);}} ///< Outputs a matrix
 
 /************************* Global Declarations ********************************/
 
-int n; // Number of Nodes in Graph
-int m; // Number of Edges in Graph
-int s; // Vertex chosen via bootstrapping indicating high stationary prob. state
-int u; // Stores the index of the sink vertex
+int n; ///< Number of Nodes in Graph
+int m; ///< Number of Edges in Graph
+int s; ///< Vertex chosen via bootstrapping indicating high stationary prob. state
+int u; ///< The index of the sink vertex
 
 
-int timer = 0; // Timer for running the chain serially
-int N = -1; // Number of samples for bootstrapping
-int d = 5; // Stores the nunber of chains to run
+int timer = 0; ///< Timer for running the chain serially
+int N = -1; ///< Number of samples for bootstrapping
+int d = 5; ///< Stores the nunber of chains to run
 
-double sb; // Stores the sum of non-sink column vectors
-double eps = 1; // Stores the bound on error required
+double sb; ///< Stores the sum of non-sink column vectors
+double eps = 1; ///< Stores the bound on error required
 
 std::mutex io_lock;
 
-#ifdef PARALLEL
+
+/// Implements an indexed priority queue
+
+/**
+ * Implements an indexed priority queue using a multiset and a dynamic array.
+ * Provides insertion and search in O(log(n)) time
+ * @tparam T Type of data to be stored in the indexed priority queue
+ */
 
 template<typename T>
 class indexedPriorityQueue{
 private:
-  int size;
-  std::multiset<T> timer;
-  std::vector<T> values;
+  int size; // Number of elements in the indexed priority queue
+  std::multiset<T> set_val; // Multiset to keep track of priorities in increasing order 
+  std::vector<T> array_val; // Dynamic array 
 public:
+  /**
+   * @brief Construct a new indexed Priority Queue object
+   * 
+   */
   indexedPriorityQueue()
   {
     size = 0;
   }
+
+  /**
+   * @brief Constructs a new indexed Priority Queue object
+   * 
+   * @param sz Size of the new queue
+   * 
+   * All elements are initialized to null type of T
+   */
   indexedPriorityQueue(int sz)
   {
     size = sz;
-    values.resize(size, 0);
-    for(auto it : values)
+    array_val.resize(size);
+    for(auto it : array_val)
     {
-      timer.insert(it);
+      set_val.insert(it);
     }
   }
+
+  /**
+   * @brief Constructs a new indexed Priority Queue object
+   * 
+   * @param sz Size of the new queue
+   * @param v Initial queue
+   */
+
   indexedPriorityQueue(int sz, std::vector<T> v)
   {
     size = sz;
-    values = v;
-    timer.clear();
-    for(auto it : values)
+    array_val = v;
+    set_val.clear();
+    for(auto it : array_val)
     {
-      timer.insert(it);
+      set_val.insert(it);
     }
   }
+
+
+  /**
+   * @brief Get the maximum priority object in the queue
+   * 
+   * @return T Returns maximum priority object
+   */
   T getMax()
   {
     if(size == 0)
     {
       return -1;
     }
-    return *(timer.rbegin());
+    return *(set_val.rbegin());
   }
+
+  /**
+   * @brief Get the object at index in the queue
+   * 
+   * @param index Index of the required object
+   * @return T Object at index position
+   */
+
   T getVal(int index)
   {
     if(index < 0 || index >= size)
     {
       return -1;
     }
-    return values[index];
+    return array_val[index];
   }
+
+  /**
+   * @brief Sets the object at given index
+   * 
+   * @param index Index at which the object is to be set
+   * @param value Value of the object to be set
+   * @return true Value set successfully
+   * @return false Value not set successfully
+   */
+
   bool setVal(int index, T value)
   {
     if(index < 0 || index >= size)
     {
       return false;
     }
-    timer.erase(values[index]);
-    values[index] = value;
-    timer.insert(value);
+    set_val.erase(set_val.find(array_val[index]));
+    array_val[index] = value;
+    set_val.insert(array_val[index]);
     return true;
   }
 };
+
+/**
+ * @brief Channel defines the control part of the program
+ * 
+ * Channel maintains a queue and threads push their updates to it.
+ * Once updates from all chains are pushed, it processes those updates.
+ * 
+ */
 
 class Channel
 {
 private:
   int T; // Global clock
-  std::vector<int> Q; // Vertex occupancy
-  std::vector<double> mu;
-  indexedPriorityQueue<double>* tm;
+  std::vector<int> Q; // Vertex occupancy at given instant
+  std::vector<double> mu; // Average vertex occupancy
+  indexedPriorityQueue<double>* tm; // Indexed priority queue to keep track of the bottleneck vertex
   std::set<int> inQueue; // All vertices that are currently waiting to be processed
   std::queue<std::pair<int, int> > R; // Updates waiting to be processed
-  std::vector<std::queue<std::tuple<int, int, int, int> > > S;
-  std::vector<int> L;
-  bool isDone;
-  std::mutex m;
+  std::vector<std::queue<std::tuple<int, int, int, int> > > S; // Data structure to keep track of updates
+  std::vector<int> L; // Indicates when was the last time a given vertex was updated
+  bool isDone; // Indicator to check if all the processing is complete
+  std::mutex m; // Mutex lock for thread safety
 public:
   int batches; //  Tells how many batches can the processing thread can go ahead wtih
+  /**
+   * @brief Construct a new Channel object
+   * 
+   */
   Channel()
   {
     T = 0; // Initialize global clock to 0
     Q.resize(n,0); // Initially all queues empty
-    S.resize(n);
-    L.resize(n,0);
-    mu.resize(n, 0);
+    S.resize(n); // Initialize update tracking for each vertex
+    L.resize(n,0); // Initialize last seen for each vertex
+    mu.resize(n, 0); // Initialize average occupancy at each vertex
     Q[s] = d; // Place all d packets at s
-    tm = new indexedPriorityQueue<double>(n);
-    if(tm->setVal(s, INT_MAX) == false)
+    tm = new indexedPriorityQueue<double>(n); // Initialize the indexed priority queue
+    if(tm->setVal(s, INT_MAX) == false) 
     {
       std::cout << "Error Initializing timer" << std::endl;
     }
-    isDone = false;
+    isDone = false; // Initialize isdone to false
   }
+  /**
+   * @brief Indicates whether a particular chain is allowed to push an update
+   * 
+   * If a chain already has an update in the queue then that chain will be denied
+   * 
+   * @param chain Chain number asking
+   * @return true If the chain is able to proceed
+   * @return false If the chain already has an element in the queue and cannot proceed
+   */
   bool canProceed(int chain)
   {
-    bool r = (inQueue.find(chain) == inQueue.end()); // The chain already has a transition in the queue
-    #ifdef DEBUG
-      io_lock.lock();
-      if(r && !isDone)
-      {
-        //std::cout << "Chain number : " << chain << " asked for permission to go ahead and was accepted" << std::endl ;
-      }
-      io_lock.unlock();
-    #endif
-    return r;
+    return (inQueue.find(chain) == inQueue.end()); // The chain already has a transition in the queue
   }
+  /**
+   * @brief Indicates whether the computation is complete
+   * 
+   * @return true If average occupancies have stabilized
+   * @return false If average occupancies have not yet stabilized
+   */
   bool canStop()
   {
     return isDone;
   }
+
+  /**
+   * @brief pushes update given by a particular chain into the queue
+   * 
+   * @param chain Chain number of the chain pushing the update
+   * @param p The update in the form of (old position, new position)
+   */
   void pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
   {
     #ifdef DEBUG
@@ -169,7 +257,7 @@ public:
     #endif
     inQueue.insert(chain);
     R.push(p); // Push transition in the queue
-    m.lock();
+    m.lock(); // Locks the queue to check whether all chains have pushed their updates
     if(inQueue.size() == (size_t)d) // If all chains have transitions in the queue, then we can clear the chain
     {
       #ifdef DEBUG
@@ -184,16 +272,18 @@ public:
     }
     m.unlock();
   }
+
+  /**
+   * @brief Once all chains have pushed their updates, the processing thread is activated.
+   * 
+   * Processes all transitions present in the queue
+   * 
+   */
   void process()
   {
-    #ifdef DEBUG
-      io_lock.lock();
-      std::cout << "Started Processing for " << batches << " number of batches" << std::endl ;
-      io_lock.unlock();
-    #endif
     if(canStop())
     {
-      return;
+      return; // Nothing to do
     }
     while(batches > 0)
     {
@@ -208,8 +298,8 @@ public:
         S[p.second].push(std::make_tuple(Q[p.second]+1, Q[p.second], T, L[p.second]));
         Q[p.first]--; // The packet left p.first
         Q[p.second]++; // The packet arrived at p.second
-        L[p.first] = T;
-        L[p.second] = T;
+        L[p.first] = T; // Updates last seen for old vertex
+        L[p.second] = T; // Updates last seen for new vertex
         updatedVertices.insert(p.first);
         updatedVertices.insert(p.second);
       }
@@ -221,20 +311,20 @@ public:
       {
         while(!S[w].empty())
         {
-          auto s = S[w].front();
+          auto s = S[w].front(); // Current update to be processed
           S[w].pop();
-          int nq = std::get<0>(s);
-          int oq = std::get<1>(s);
-          int nt = std::get<2>(s);
-          int ot = std::get<3>(s);
+          int nq = std::get<0>(s); // New occupancy at w
+          int oq = std::get<1>(s); // Old occupancy at w
+          int nt = std::get<2>(s); // Time at which occupancy changed
+          int ot = std::get<3>(s); // Last seen time before the change in occupancy
           double z = mu[w] * ot + oq * (nt - ot - 1) + nq;
           z /= nt;
-          mu[w] = z;
-          double disc = 1 + 4 * ((abs(nq-mu[w]) * ot)/eps);
+          mu[w] = z; // Updates the average occupancy at this point
+          double disc = 1 + 4 * ((fabs(nq-mu[w]) * ot)/eps);
           double temp = sqrt(disc);
           temp += 1;
           temp /= 2;
-          tm->setVal(w, temp);
+          tm->setVal(w, temp); // Updates the countdown timer in the indexed priority queue
           #ifdef DEBUG
             io_lock.lock();
             std::cout << "Timer for: " << w << " changed to: " << temp << std::endl;
@@ -243,7 +333,7 @@ public:
           #endif
         }
       }
-      if(tm->getMax() <= T)
+      if(tm->getMax() <= T) // If the maximum time for any vertex to stabilize in occupancy is less than current time, we stop
       {
         isDone = true;
       }
@@ -254,7 +344,6 @@ Channel *chan;
 
 std::vector<int> X_P; // State vector for multi-dimension markov chain
 
-#endif
 
 
 #ifdef TIMER // Declares variables for storing timestamps and durations if -DTIMER is passed as a flag
@@ -266,68 +355,73 @@ std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, 
 #endif
 
 
-std::vector<int> identity;
-std::vector<int> X; // State vector for multi-dimension markov chain
-std::vector<int> Q; // Occupancy vector for each node
-std::vector<double> mu; // Error vector mu as per definition
+std::vector<int> identity; ///< Identity vector
+std::vector<int> X; ///< State vector for multi-dimension markov chain
+std::vector<int> Q; ///< Occupancy vector for each node
+std::vector<double> mu; ///< Error vector mu as per definition
 
 
-std::vector<double> b; // Column vector b as per definition
-std::vector<double> j; // Column vector j as per definition
-std::vector<double> D; // Stores total weight sum for the vertices
+std::vector<double> b; ///< Column vector b as per definition
+std::vector<double> j; ///< Column vector j as per definition
+std::vector<double> D; ///< Stores total weight sum for the vertices
 
-std::vector<std::pair<double, int> > sources; // Distribution of sources
+std::vector<std::pair<double, int> > sources; ///< Distribution of sources
 
-std::vector<std::vector<int> > adj_list; // Adjacency list for the given graph
+std::vector<std::vector<int> > adj_list; ///< Adjacency list for the given graph
 
-std::vector<std::tuple<int, int, double> > edges; // List of edges of the graph
+std::vector<std::tuple<int, int, double> > edges; ///< List of edges of the graph
 
-std::vector<std::vector<std::pair<double, int> > > P, Cum_P; // Transition Matrix and Cumulative Transition Matrix
+std::vector<std::vector<std::pair<double, int> > > P; ///< Transition Matrix 
+std::vector<std::vector<std::pair<double, int> > > Cum_P; ///< Cumulative Transition Matrix
 
 
-std::map<std::pair<int, int>, double> weightMap; // Contains mapping from pair of nodes to their corresponding edge weight
+std::map<std::pair<int, int>, double> weightMap; ///< Contains mapping from pair of nodes to their corresponding edge weight
 
-std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; // Stores the computed hitting table distributions for different pair of nodes
+std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; ///< Stores the computed hitting table distributions for different pair of nodes
 
 /************************* Function Prototypes ********************************/
 
 /************************* Utility Functions **********************************/
 
-void DFS(int node, std::vector<int> &visited, int &cnt); // Performs DFS on the graph storing connected counter in cnt
+void DFS(int node, std::vector<int> &visited, int &cnt); 
 
-bool checkConnected(); // Check if the given graph is connected
-
-template<typename T>
-bool cumDist(); // Checks whether the
-
-void throwError(std::string err); // Throws Error and exits the program
+bool checkConnected(); 
 
 template<typename T>
-T distSelector(const std::vector<std::pair<double, T> > &dist); // Sample from a given distribution
+bool cumDist(); 
 
-void generateHittingTable(int start, int end); // Generates Hitting Table between the two given vertices
+void throwError(std::string err); 
 
-#ifdef PARALLEL
-void runChainParallelInstance(); // An instance of running chain
-#endif
+template<typename T>
+T distSelector(const std::vector<std::pair<double, T> > &dist); 
+
+void generateHittingTable(int start, int end);
+
+void runChainParallelInstance(); 
 
 /************************* Useful Functions Definitions ***********************/
 
-void init(); // Initializes the chain
+void init(); 
 
-void bootstrap(); // Bootstraps the chain and finds s
+void bootstrap(); 
 
-void runChainSerial(); // Run the chain serially
+void runChainSerial();
 
-#ifdef PARALLEL
-void runChainParallel(); // Run the chain parallely
-#endif
+void runChainParallel();
 
-void runChain(); // Run Phase two
+void runChain(); 
 
-void end(); // Completion Formalities
+void end();
 
 /************************* Utility Function  **********************************/
+
+/**
+ * @brief Runs a Depth first search to mark all connected nodes
+ * 
+ * @param node current node
+ * @param visited array indicating wether each node has been visited or not
+ * @param cnt counter indicating number of visited nodes
+ */
 
 void DFS(int node, std::vector<int> &visited, int &cnt)
 {
@@ -344,6 +438,13 @@ void DFS(int node, std::vector<int> &visited, int &cnt)
   }
 }
 
+/**
+ * @brief Checks if the input is connected
+ * 
+ * @return true Input Graph is connected
+ * @return false Input Graph is not connected
+ */
+
 bool checkConnected()
 {
   std::vector<int> visited(n,-1); // This vector keeps track of visited nodes
@@ -351,6 +452,15 @@ bool checkConnected()
   DFS(0, visited, cnt); // DFS to update visited counter
   return (cnt == n); // Return true if all nodes have been visited, false otherwise
 }
+
+/**
+ * @brief Checks if the given array is a Cumulative distribution or not
+ * 
+ * @tparam T Type of labels on each entity
+ * @param dist Candidate distribution
+ * @return true Given candidate is a Cumulative distribution
+ * @return false Given candidate is not a Cumulative distribution
+ */
 
 template<typename T>
 bool cumDist(const std::vector<std::pair<double, T> > &dist)
@@ -367,19 +477,33 @@ bool cumDist(const std::vector<std::pair<double, T> > &dist)
   return (prev==1); // last entry of the distribution should be 1
 }
 
+/**
+ * @brief A utility function to throw errors and exit the program
+ * 
+ * @param err Error encoded as string
+ */
+
 void throwError(std::string err)
 {
   std::cout << " Fatal Error: " << err << std::endl;
   exit(1);
 }
 
+/**
+ * @brief Selects a given label from the distribution
+ * 
+ * @tparam T Type of label in the disrtibution
+ * @param dist Cumulative probability disrtibution
+ * @return T 
+ */
+
 template<typename T>
 T distSelector(const std::vector<std::pair<double, T> > &dist)
 {
   int i1 = dist.size();
 
-  double d1 = rand();
-  d1 /= RAND_MAX; // d1 represents the chosen random value
+  double d1 = rand(); // d1 represents the chosen random value
+  d1 /= RAND_MAX; 
 
   if(d1 <= dist[0].first) // first entry is the selected entry
   {
@@ -425,6 +549,13 @@ T distSelector(const std::vector<std::pair<double, T> > &dist)
   return dist[mid+1].second;
 }
 
+/**
+ * @brief Generates Hitting table for vertices starting from start and ending at end
+ * 
+ * @param start Starting vertex
+ * @param end Ending vertex
+ */
+
 void generateHittingTable(int start, int end)
 {
   std::unordered_map<int, int> mp;
@@ -453,7 +584,13 @@ void generateHittingTable(int start, int end)
   HittingTable[std::make_pair(start, end)] = dist;
 }
 
-#ifdef PARALLEL
+
+/**
+ * @brief Runs an instance of the markov chain
+ * 
+ * @param chain_number Chain number to assign to the thread
+ * @return void* Exit value of thread(NULL)
+ */
 
 void *runChainParallelInstance(void* chain_number)
 {
@@ -487,7 +624,11 @@ void *runChainParallelInstance(void* chain_number)
   pthread_exit(NULL);
 }
 
-#endif
+
+/**
+ * @brief Initializes the variables, i.e. Takes input
+ * 
+ */
 
 void init()
 {
@@ -633,7 +774,10 @@ void init()
     }
   }
 
-  std::cin >> eps; // Input the error parameter
+  scanf("%lf", &eps); // Input the error parameter
+  eps = 1;
+  eps /= (double)n;
+  printf("%lf\n", eps);
   //std::cout << eps << std::endl;
   #ifdef TIMER
 
@@ -644,6 +788,11 @@ void init()
   #endif
 
 }
+
+/**
+ * @brief Bootstrap runs the bootstrapping algorithm and finds the ideal vertex to start the chain from
+ * 
+ */
 
 void bootstrap()
 {
@@ -676,6 +825,11 @@ void bootstrap()
   }
   s = shat; // Assign chosen vertex to s
 }
+
+/**
+ * @brief Runs the chain serially
+ * 
+ */
 
 void runChainSerial()
 {
@@ -714,9 +868,10 @@ void runChainSerial()
   }
 }
 
-#ifdef PARALLEL
-
-
+/**
+ * @brief Runs the chain parallely
+ * 
+ */
 void runChainParallel()
 {
   chan = new Channel();
@@ -751,27 +906,28 @@ void runChainParallel()
   }
 }
 
-#endif
+
+/**
+ * @brief runs the chain 
+ * 
+ */
 
 void runChain()
 {
   /***************************** Initialization *******************************/
 
-  #ifdef PARALLEL
-    X_P.resize(d,s);
-    #ifdef DEBUG
-      std::cout << "runChain Started" << std::endl;
-    #endif
-    runChainParallel();
-    return;
+  X_P.resize(d,s);
+  #ifdef DEBUG
+    std::cout << "runChain Started" << std::endl;
   #endif
-  X.resize(d, s);
-  Q.resize(n, 0);
-  mu.resize(n,0);
-  Q[s] = d;
-  runChainSerial();
+  runChainParallel();
   return;
 }
+
+/**
+ * @brief Completes exit formalities
+ * 
+ */
 
 void end()
 {
@@ -787,6 +943,12 @@ void end()
 
   #endif
 }
+
+/**
+ * @brief Main function
+ * 
+ * @return int Exit status of the program
+ */
 
 int main()
 {

@@ -1,0 +1,363 @@
+\hypertarget{NaivePLW_8cpp}{}\doxysection{src/naive/\+Naive\+PLW.cpp File Reference}
+\label{NaivePLW_8cpp}\index{src/naive/NaivePLW.cpp@{src/naive/NaivePLW.cpp}}
+
+
+One-\/sink Laplacian Solver Using Random Walks.  
+
+
+{\ttfamily \#include $<$bits/stdc++.\+h$>$}\newline
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classindexedPriorityQueue}{indexed\+Priority\+Queue$<$ T $>$}}
+\begin{DoxyCompactList}\small\item\em Implements an indexed priority queue. \end{DoxyCompactList}\item 
+class \mbox{\hyperlink{classChannel}{Channel}}
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classChannel}{Channel}} defines the control part of the program. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_af6444ef473221de3f66e84e0685e713f}\label{NaivePLW_8cpp_af6444ef473221de3f66e84e0685e713f}} 
+\#define {\bfseries nll}~\char`\"{}\char`\"{}
+\begin{DoxyCompactList}\small\item\em empty string alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a2bf2280dd2a6739f0df566f16538c8fc}\label{NaivePLW_8cpp_a2bf2280dd2a6739f0df566f16538c8fc}} 
+\#define {\bfseries br}~\char`\"{} \char`\"{}
+\begin{DoxyCompactList}\small\item\em space alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a3db49841a027926234081f0b8c8f8f8e}\label{NaivePLW_8cpp_a3db49841a027926234081f0b8c8f8f8e}} 
+\#define {\bfseries nl}~std\+::endl
+\begin{DoxyCompactList}\small\item\em newline alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_af165d8a92b407bcda7ac6820961dbf78}\label{NaivePLW_8cpp_af165d8a92b407bcda7ac6820961dbf78}} 
+\#define {\bfseries in}(a)~std\+::cin $>$$>$ a;
+\begin{DoxyCompactList}\small\item\em single input alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a954e4a9ed40dd568b70e471e332049f1}\label{NaivePLW_8cpp_a954e4a9ed40dd568b70e471e332049f1}} 
+\#define {\bfseries in2}(a,  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}})~std\+::cin $>$$>$ a $>$$>$ \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}};
+\begin{DoxyCompactList}\small\item\em double input alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_aa564e416b7553a62a17ec6526f135c3b}\label{NaivePLW_8cpp_aa564e416b7553a62a17ec6526f135c3b}} 
+\#define {\bfseries in3}(a,  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}},  c)~std\+::cin $>$$>$ a $>$$>$ \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}} $>$$>$ c;
+\begin{DoxyCompactList}\small\item\em triple input alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ac3fb03bdcea774c17f01a3b1ecf0cd0f}\label{NaivePLW_8cpp_ac3fb03bdcea774c17f01a3b1ecf0cd0f}} 
+\#define {\bfseries out}(a)~std\+::cout $<$$<$ a;
+\begin{DoxyCompactList}\small\item\em single output alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a0dfe4c4f1719f69717bb25c249388441}\label{NaivePLW_8cpp_a0dfe4c4f1719f69717bb25c249388441}} 
+\#define {\bfseries out2}(a,  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}})~std\+::cout $<$$<$  a $<$$<$ \mbox{\hyperlink{NaivePLW_8cpp_a2bf2280dd2a6739f0df566f16538c8fc}{br}} $<$$<$  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}};
+\begin{DoxyCompactList}\small\item\em double output alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a3f4d1d9026765814539d4c7ed16a074b}\label{NaivePLW_8cpp_a3f4d1d9026765814539d4c7ed16a074b}} 
+\#define {\bfseries out3}(a,  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}},  c)~std\+::cout $<$$<$  a $<$$<$ \mbox{\hyperlink{NaivePLW_8cpp_a2bf2280dd2a6739f0df566f16538c8fc}{br}} $<$$<$  \mbox{\hyperlink{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}{b}} $<$$<$ \mbox{\hyperlink{NaivePLW_8cpp_a2bf2280dd2a6739f0df566f16538c8fc}{br}} $<$$<$  c;
+\begin{DoxyCompactList}\small\item\em triple output alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ad290992deb258a01511486a5d7071efb}\label{NaivePLW_8cpp_ad290992deb258a01511486a5d7071efb}} 
+\#define {\bfseries outs}(a)~\mbox{\hyperlink{NaivePLW_8cpp_a0dfe4c4f1719f69717bb25c249388441}{out2}}(a,\mbox{\hyperlink{NaivePLW_8cpp_af6444ef473221de3f66e84e0685e713f}{nll}})
+\begin{DoxyCompactList}\small\item\em output with space alias \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ae80599db47986ac7c42c34f0a2057bd4}\label{NaivePLW_8cpp_ae80599db47986ac7c42c34f0a2057bd4}} 
+\#define {\bfseries outn}(a)~std\+::cout $<$$<$ a $<$$<$ \mbox{\hyperlink{NaivePLW_8cpp_a3db49841a027926234081f0b8c8f8f8e}{nl}};
+\begin{DoxyCompactList}\small\item\em output with newline alias \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a983b1d382529f7909fcb5b20a39ec874}\label{NaivePLW_8cpp_a983b1d382529f7909fcb5b20a39ec874}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries incontainer} (std\+::vector$<$ T $>$ \&v)
+\begin{DoxyCompactList}\small\item\em Inputs space separated dynamic array. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a415a756fcf5a3a66cc6f21fc6e651389}\label{NaivePLW_8cpp_a415a756fcf5a3a66cc6f21fc6e651389}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries outcontainer} (std\+::vector$<$ T $>$ \&v)
+\begin{DoxyCompactList}\small\item\em Outputs space separated dynamic array. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a5eb720ec7c591e4d12bcbd712da345b7}\label{NaivePLW_8cpp_a5eb720ec7c591e4d12bcbd712da345b7}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries inmatrix} (std\+::vector$<$ std\+::vector$<$ T $>$ $>$ \&v)
+\begin{DoxyCompactList}\small\item\em Inputs space separated entries of newline separated dynamic arrays forming a matrix. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a428847468e544ce55ffe849ce6b25a15}\label{NaivePLW_8cpp_a428847468e544ce55ffe849ce6b25a15}} 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries outmatrix} (std\+::vector$<$ std\+::vector$<$ T $>$ $>$ \&v)
+\begin{DoxyCompactList}\small\item\em Outputs a matrix. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{NaivePLW_8cpp_a4419e56550090ab681895999bde12072}{DFS}} (int node, std\+::vector$<$ int $>$ \&visited, int \&cnt)
+\begin{DoxyCompactList}\small\item\em Runs a Depth first search to mark all connected nodes. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{NaivePLW_8cpp_acdc38e4fc89d43ac4f7caaef3be1a2dd}{check\+Connected}} ()
+\begin{DoxyCompactList}\small\item\em Checks if the input is connected. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ab42f802b1bc580c42a6bc3bf3d7d913d}\label{NaivePLW_8cpp_ab42f802b1bc580c42a6bc3bf3d7d913d}} 
+{\footnotesize template$<$typename T $>$ }\\bool {\bfseries cum\+Dist} ()
+\item 
+void \mbox{\hyperlink{NaivePLW_8cpp_aa0496289556a60651837988b7ed43fa0}{throw\+Error}} (std\+::string err)
+\begin{DoxyCompactList}\small\item\em A utility function to throw errors and exit the program. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\T \mbox{\hyperlink{NaivePLW_8cpp_ad9687661ae821194e0fd9d9ed26a20d6}{dist\+Selector}} (const std\+::vector$<$ std\+::pair$<$ double, T $>$ $>$ \&dist)
+\begin{DoxyCompactList}\small\item\em Selects a given label from the distribution. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{NaivePLW_8cpp_a821ce540f80447782625549c078773ff}{generate\+Hitting\+Table}} (int start, int \mbox{\hyperlink{NaivePLW_8cpp_aaf81d3fdaf258088d7692fa70cece087}{end}})
+\begin{DoxyCompactList}\small\item\em Generates Hitting table for vertices starting from start and ending at end. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a849e61fc4032c94e2e8692152d9dc4e7}\label{NaivePLW_8cpp_a849e61fc4032c94e2e8692152d9dc4e7}} 
+void {\bfseries run\+Chain\+Parallel\+Instance} ()
+\item 
+void \mbox{\hyperlink{NaivePLW_8cpp_a02fd73d861ef2e4aabb38c0c9ff82947}{init}} ()
+\begin{DoxyCompactList}\small\item\em Initializes the variables, i.\+e. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a035b29d17f8e559fd778e5c660ca5f35}\label{NaivePLW_8cpp_a035b29d17f8e559fd778e5c660ca5f35}} 
+void {\bfseries bootstrap} ()
+\begin{DoxyCompactList}\small\item\em Bootstrap runs the bootstrapping algorithm and finds the ideal vertex to start the chain from. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a1d3e727c927614c023e5083559742187}\label{NaivePLW_8cpp_a1d3e727c927614c023e5083559742187}} 
+void {\bfseries run\+Chain\+Serial} ()
+\begin{DoxyCompactList}\small\item\em Runs the chain serially. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_aa86a920cc22b1695bb01375a35dcfd8a}\label{NaivePLW_8cpp_aa86a920cc22b1695bb01375a35dcfd8a}} 
+void {\bfseries run\+Chain\+Parallel} ()
+\begin{DoxyCompactList}\small\item\em Runs the chain parallely. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a83cdc1bfa9e7036e079d39c3fcdccb7b}\label{NaivePLW_8cpp_a83cdc1bfa9e7036e079d39c3fcdccb7b}} 
+void {\bfseries run\+Chain} ()
+\begin{DoxyCompactList}\small\item\em runs the chain \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_aaf81d3fdaf258088d7692fa70cece087}\label{NaivePLW_8cpp_aaf81d3fdaf258088d7692fa70cece087}} 
+void {\bfseries end} ()
+\begin{DoxyCompactList}\small\item\em Completes exit formalities. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\bool \mbox{\hyperlink{NaivePLW_8cpp_af642ac8547a415ef90fcb65972330277}{cum\+Dist}} (const std\+::vector$<$ std\+::pair$<$ double, T $>$ $>$ \&dist)
+\begin{DoxyCompactList}\small\item\em Checks if the given array is a Cumulative distribution or not. \end{DoxyCompactList}\item 
+void $\ast$ \mbox{\hyperlink{NaivePLW_8cpp_ad7b44182ec2257e5bf072b16b5682974}{run\+Chain\+Parallel\+Instance}} (void $\ast$chain\+\_\+number)
+\begin{DoxyCompactList}\small\item\em Runs an instance of the markov chain. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{NaivePLW_8cpp_ae66f6b31b5ad750f1fe042a706a4e3d4}{main}} ()
+\begin{DoxyCompactList}\small\item\em Main function. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a76f11d9a0a47b94f72c2d0e77fb32240}\label{NaivePLW_8cpp_a76f11d9a0a47b94f72c2d0e77fb32240}} 
+int {\bfseries n}
+\begin{DoxyCompactList}\small\item\em Number of Nodes in Graph. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a742204794ea328ba293fe59cec79b990}\label{NaivePLW_8cpp_a742204794ea328ba293fe59cec79b990}} 
+int {\bfseries m}
+\begin{DoxyCompactList}\small\item\em Number of Edges in Graph. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a339d22b3e442946380f98ed19e320db2}\label{NaivePLW_8cpp_a339d22b3e442946380f98ed19e320db2}} 
+int {\bfseries s}
+\begin{DoxyCompactList}\small\item\em Vertex chosen via bootstrapping indicating high stationary prob. state. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a5874b4c2ec2e28321eea4e4871d08222}\label{NaivePLW_8cpp_a5874b4c2ec2e28321eea4e4871d08222}} 
+int {\bfseries u}
+\begin{DoxyCompactList}\small\item\em The index of the sink vertex. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ae2c6087027bfdf561a2b766975b47ee8}\label{NaivePLW_8cpp_ae2c6087027bfdf561a2b766975b47ee8}} 
+int {\bfseries timer} = 0
+\begin{DoxyCompactList}\small\item\em Timer for running the chain serially. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a7722c8ecbb62d99aee7ce68b1752f337}\label{NaivePLW_8cpp_a7722c8ecbb62d99aee7ce68b1752f337}} 
+int {\bfseries N} = -\/1
+\begin{DoxyCompactList}\small\item\em Number of samples for bootstrapping. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a6f364afbe132c4ecfea48bde1b0618ba}\label{NaivePLW_8cpp_a6f364afbe132c4ecfea48bde1b0618ba}} 
+int {\bfseries d} = 5
+\begin{DoxyCompactList}\small\item\em Stores the nunber of chains to run. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a20eed8d4ad41316311bae4abe238c1ca}\label{NaivePLW_8cpp_a20eed8d4ad41316311bae4abe238c1ca}} 
+double {\bfseries sb}
+\begin{DoxyCompactList}\small\item\em Stores the sum of non-\/sink column vectors. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a974b448c3d0a13d483d36ef15de369b5}\label{NaivePLW_8cpp_a974b448c3d0a13d483d36ef15de369b5}} 
+double {\bfseries eps} = 1
+\begin{DoxyCompactList}\small\item\em Stores the bound on error required. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a468035f3ef1ede930c67df9a299c2465}\label{NaivePLW_8cpp_a468035f3ef1ede930c67df9a299c2465}} 
+std\+::mutex {\bfseries io\+\_\+lock}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ab577d14999d9b3a813ae1647e38758c5}\label{NaivePLW_8cpp_ab577d14999d9b3a813ae1647e38758c5}} 
+\mbox{\hyperlink{classChannel}{Channel}} $\ast$ {\bfseries chan}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a68cb35edf01c9c03fab91aa297c762ab}\label{NaivePLW_8cpp_a68cb35edf01c9c03fab91aa297c762ab}} 
+std\+::vector$<$ int $>$ {\bfseries X\+\_\+P}
+\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a4fd452a08721b76b9e9dbfe38baef5ba}\label{NaivePLW_8cpp_a4fd452a08721b76b9e9dbfe38baef5ba}} 
+std\+::vector$<$ int $>$ {\bfseries identity}
+\begin{DoxyCompactList}\small\item\em Identity vector. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_aa4b7536c955a2d8c5a9c2224a55c71a7}\label{NaivePLW_8cpp_aa4b7536c955a2d8c5a9c2224a55c71a7}} 
+std\+::vector$<$ int $>$ {\bfseries X}
+\begin{DoxyCompactList}\small\item\em State vector for multi-\/dimension markov chain. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a5af4e241de66ba879e7ef9aa53824c81}\label{NaivePLW_8cpp_a5af4e241de66ba879e7ef9aa53824c81}} 
+std\+::vector$<$ int $>$ {\bfseries Q}
+\begin{DoxyCompactList}\small\item\em Occupancy vector for each node. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_ad5ac3157da2b54cc34509682c45a27b3}\label{NaivePLW_8cpp_ad5ac3157da2b54cc34509682c45a27b3}} 
+std\+::vector$<$ double $>$ {\bfseries mu}
+\begin{DoxyCompactList}\small\item\em Error vector mu as per definition. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}\label{NaivePLW_8cpp_aa3c4ceb01341c4ee264bf8bc60be5ba3}} 
+std\+::vector$<$ double $>$ {\bfseries b}
+\begin{DoxyCompactList}\small\item\em Column vector b as per definition. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a8b745d81e278e5fdc15b4d7ab12d7536}\label{NaivePLW_8cpp_a8b745d81e278e5fdc15b4d7ab12d7536}} 
+std\+::vector$<$ double $>$ {\bfseries j}
+\begin{DoxyCompactList}\small\item\em Column vector j as per definition. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a07af738d5c9a8eb62002dfe39272310c}\label{NaivePLW_8cpp_a07af738d5c9a8eb62002dfe39272310c}} 
+std\+::vector$<$ double $>$ {\bfseries D}
+\begin{DoxyCompactList}\small\item\em Stores total weight sum for the vertices. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a810128550f1a55a49555ba2329ba38de}\label{NaivePLW_8cpp_a810128550f1a55a49555ba2329ba38de}} 
+std\+::vector$<$ std\+::pair$<$ double, int $>$ $>$ {\bfseries sources}
+\begin{DoxyCompactList}\small\item\em Distribution of sources. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_af8d4b2e5c509aa5bfbb58f58d1478004}\label{NaivePLW_8cpp_af8d4b2e5c509aa5bfbb58f58d1478004}} 
+std\+::vector$<$ std\+::vector$<$ int $>$ $>$ {\bfseries adj\+\_\+list}
+\begin{DoxyCompactList}\small\item\em Adjacency list for the given graph. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a9e3eea751bf09384d00c915fbd117820}\label{NaivePLW_8cpp_a9e3eea751bf09384d00c915fbd117820}} 
+std\+::vector$<$ std\+::tuple$<$ int, int, double $>$ $>$ {\bfseries edges}
+\begin{DoxyCompactList}\small\item\em List of edges of the graph. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a43774b0fb8e86b5ad0c7cb0e59da105e}\label{NaivePLW_8cpp_a43774b0fb8e86b5ad0c7cb0e59da105e}} 
+std\+::vector$<$ std\+::vector$<$ std\+::pair$<$ double, int $>$ $>$ $>$ {\bfseries P}
+\begin{DoxyCompactList}\small\item\em Transition Matrix. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a5c394c6f83a056eebbed780a88d8cd18}\label{NaivePLW_8cpp_a5c394c6f83a056eebbed780a88d8cd18}} 
+std\+::vector$<$ std\+::vector$<$ std\+::pair$<$ double, int $>$ $>$ $>$ {\bfseries Cum\+\_\+P}
+\begin{DoxyCompactList}\small\item\em Cumulative Transition Matrix. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a5df75d1acd92aa0863c407144e627d81}\label{NaivePLW_8cpp_a5df75d1acd92aa0863c407144e627d81}} 
+std\+::map$<$ std\+::pair$<$ int, int $>$, double $>$ {\bfseries weight\+Map}
+\begin{DoxyCompactList}\small\item\em Contains mapping from pair of nodes to their corresponding edge weight. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{NaivePLW_8cpp_a25cb216f07526f3dd7ed7520c90dac4c}\label{NaivePLW_8cpp_a25cb216f07526f3dd7ed7520c90dac4c}} 
+std\+::map$<$ std\+::pair$<$ int, int $>$, std\+::vector$<$ std\+::pair$<$ double, int $>$ $>$ $>$ {\bfseries Hitting\+Table}
+\begin{DoxyCompactList}\small\item\em Stores the computed hitting table distributions for different pair of nodes. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+One-\/sink Laplacian Solver Using Random Walks. 
+
+\begin{DoxyAuthor}{Author}
+Dhananjay Kajla (\href{mailto:kajla.dhananjay@gmail.com}{\texttt{ kajla.\+dhananjay@gmail.\+com}}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+0.\+5 
+\end{DoxyVersion}
+\begin{DoxyDate}{Date}
+2021-\/11-\/22
+\end{DoxyDate}
+\begin{DoxyCopyright}{Copyright}
+Copyright (c) 2021 
+\end{DoxyCopyright}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{NaivePLW_8cpp_acdc38e4fc89d43ac4f7caaef3be1a2dd}\label{NaivePLW_8cpp_acdc38e4fc89d43ac4f7caaef3be1a2dd}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!checkConnected@{checkConnected}}
+\index{checkConnected@{checkConnected}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{checkConnected()}{checkConnected()}}
+{\footnotesize\ttfamily bool check\+Connected (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Checks if the input is connected. 
+
+\begin{DoxyReturn}{Returns}
+true Input Graph is connected 
+
+false Input Graph is not connected 
+\end{DoxyReturn}
+\mbox{\Hypertarget{NaivePLW_8cpp_af642ac8547a415ef90fcb65972330277}\label{NaivePLW_8cpp_af642ac8547a415ef90fcb65972330277}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!cumDist@{cumDist}}
+\index{cumDist@{cumDist}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{cumDist()}{cumDist()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+bool cum\+Dist (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ std\+::pair$<$ double, T $>$ $>$ \&}]{dist }\end{DoxyParamCaption})}
+
+
+
+Checks if the given array is a Cumulative distribution or not. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em T} & Type of labels on each entity \\
+\hline
+\end{DoxyTemplParams}
+
+\begin{DoxyParams}{Parameters}
+{\em dist} & Candidate distribution \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true Given candidate is a Cumulative distribution 
+
+false Given candidate is not a Cumulative distribution 
+\end{DoxyReturn}
+\mbox{\Hypertarget{NaivePLW_8cpp_a4419e56550090ab681895999bde12072}\label{NaivePLW_8cpp_a4419e56550090ab681895999bde12072}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!DFS@{DFS}}
+\index{DFS@{DFS}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{DFS()}{DFS()}}
+{\footnotesize\ttfamily void DFS (\begin{DoxyParamCaption}\item[{int}]{node,  }\item[{std\+::vector$<$ int $>$ \&}]{visited,  }\item[{int \&}]{cnt }\end{DoxyParamCaption})}
+
+
+
+Runs a Depth first search to mark all connected nodes. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em node} & current node \\
+\hline
+{\em visited} & array indicating wether each node has been visited or not \\
+\hline
+{\em cnt} & counter indicating number of visited nodes \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{NaivePLW_8cpp_ad9687661ae821194e0fd9d9ed26a20d6}\label{NaivePLW_8cpp_ad9687661ae821194e0fd9d9ed26a20d6}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!distSelector@{distSelector}}
+\index{distSelector@{distSelector}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{distSelector()}{distSelector()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+T dist\+Selector (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ std\+::pair$<$ double, T $>$ $>$ \&}]{dist }\end{DoxyParamCaption})}
+
+
+
+Selects a given label from the distribution. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em T} & Type of label in the disrtibution \\
+\hline
+\end{DoxyTemplParams}
+
+\begin{DoxyParams}{Parameters}
+{\em dist} & Cumulative probability disrtibution \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+T 
+\end{DoxyReturn}
+\mbox{\Hypertarget{NaivePLW_8cpp_a821ce540f80447782625549c078773ff}\label{NaivePLW_8cpp_a821ce540f80447782625549c078773ff}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!generateHittingTable@{generateHittingTable}}
+\index{generateHittingTable@{generateHittingTable}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{generateHittingTable()}{generateHittingTable()}}
+{\footnotesize\ttfamily void generate\+Hitting\+Table (\begin{DoxyParamCaption}\item[{int}]{start,  }\item[{int}]{end }\end{DoxyParamCaption})}
+
+
+
+Generates Hitting table for vertices starting from start and ending at end. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em start} & Starting vertex \\
+\hline
+{\em end} & Ending vertex \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{NaivePLW_8cpp_a02fd73d861ef2e4aabb38c0c9ff82947}\label{NaivePLW_8cpp_a02fd73d861ef2e4aabb38c0c9ff82947}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!init@{init}}
+\index{init@{init}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{init()}{init()}}
+{\footnotesize\ttfamily void init (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Initializes the variables, i.\+e. 
+
+Takes input \mbox{\Hypertarget{NaivePLW_8cpp_ae66f6b31b5ad750f1fe042a706a4e3d4}\label{NaivePLW_8cpp_ae66f6b31b5ad750f1fe042a706a4e3d4}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!main@{main}}
+\index{main@{main}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Main function. 
+
+\begin{DoxyReturn}{Returns}
+int Exit status of the program 
+\end{DoxyReturn}
+\mbox{\Hypertarget{NaivePLW_8cpp_ad7b44182ec2257e5bf072b16b5682974}\label{NaivePLW_8cpp_ad7b44182ec2257e5bf072b16b5682974}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!runChainParallelInstance@{runChainParallelInstance}}
+\index{runChainParallelInstance@{runChainParallelInstance}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{runChainParallelInstance()}{runChainParallelInstance()}}
+{\footnotesize\ttfamily void $\ast$ run\+Chain\+Parallel\+Instance (\begin{DoxyParamCaption}\item[{void $\ast$}]{chain\+\_\+number }\end{DoxyParamCaption})}
+
+
+
+Runs an instance of the markov chain. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em chain\+\_\+number} & Chain number to assign to the thread \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+void$\ast$ Exit value of thread(\+NULL) 
+\end{DoxyReturn}
+\mbox{\Hypertarget{NaivePLW_8cpp_aa0496289556a60651837988b7ed43fa0}\label{NaivePLW_8cpp_aa0496289556a60651837988b7ed43fa0}} 
+\index{NaivePLW.cpp@{NaivePLW.cpp}!throwError@{throwError}}
+\index{throwError@{throwError}!NaivePLW.cpp@{NaivePLW.cpp}}
+\doxysubsubsection{\texorpdfstring{throwError()}{throwError()}}
+{\footnotesize\ttfamily void throw\+Error (\begin{DoxyParamCaption}\item[{std\+::string}]{err }\end{DoxyParamCaption})}
+
+
+
+A utility function to throw errors and exit the program. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em err} & Error encoded as string \\
+\hline
+\end{DoxyParams}

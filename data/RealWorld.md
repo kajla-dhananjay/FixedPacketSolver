@@ -14,7 +14,7 @@ Number of Sources = 40
 
 
 
-# Complete Graph Datase
+# Complete Graph Dataset
 
 Number of Sources = 40
 
