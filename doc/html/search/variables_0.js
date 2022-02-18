@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['adj_5flist_0',['adj_list',['../NaivePLW_8cpp.html#af8d4b2e5c509aa5bfbb58f58d1478004',1,'NaivePLW.cpp']]]
+  ['b_0',['b',['../NaivePLW_8cpp.html#aa3c4ceb01341c4ee264bf8bc60be5ba3',1,'NaivePLW.cpp']]]
 ];

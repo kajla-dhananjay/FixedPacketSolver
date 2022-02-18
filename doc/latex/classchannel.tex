@@ -1,0 +1,121 @@
+\hypertarget{classchannel}{}\doxysection{channel Class Reference}
+\label{classchannel}\index{channel@{channel}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classchannel_ada2d87a18f6b93fd9940f9242b225a04}\label{classchannel_ada2d87a18f6b93fd9940f9242b225a04}} 
+{\bfseries channel} ()
+\begin{DoxyCompactList}\small\item\em Default Constructor. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classchannel_a47a01f07fd37071a88383c872e64e7c6}{channel}} (int \mbox{\hyperlink{NaivePLW_8cpp_a76f11d9a0a47b94f72c2d0e77fb32240}{n}}, int \mbox{\hyperlink{NaivePLW_8cpp_a339d22b3e442946380f98ed19e320db2}{s}}, int \mbox{\hyperlink{NaivePLW_8cpp_a6f364afbe132c4ecfea48bde1b0618ba}{d}}, double e)
+\begin{DoxyCompactList}\small\item\em Creates a new channel object for given number of nodes, given start node, given number of chains. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classchannel_a7d25e35676f4bd28bb504cace6931e13}{get\+Chain}} ()
+\begin{DoxyCompactList}\small\item\em Indicates whether a particular chain is allowed to push an update. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classchannel_a91f99424dc3801534ff98e75c3ca6773}{can\+Stop}} ()
+\begin{DoxyCompactList}\small\item\em Indicates whether the computation is complete. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classchannel_aef415d9049f2d7142ba874fed2534f92}{push\+Update}} (int chain, std\+::pair$<$ int, int $>$ p)
+\begin{DoxyCompactList}\small\item\em pushes update given by a particular chain into the queue \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \mbox{\hyperlink{classchannel_a7ce043d250a55249836f68256de1133f}{get\+Mu}} ()
+\begin{DoxyCompactList}\small\item\em gets the Average Occupancies \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classchannel_a0e0745c66e353e64bf5a18db56113761}{process}} ()
+\begin{DoxyCompactList}\small\item\em Once all chains have pushed their updates, the processing thread is activated. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classchannel_a47a01f07fd37071a88383c872e64e7c6}\label{classchannel_a47a01f07fd37071a88383c872e64e7c6}} 
+\index{channel@{channel}!channel@{channel}}
+\index{channel@{channel}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{channel()}{channel()}}
+{\footnotesize\ttfamily channel\+::channel (\begin{DoxyParamCaption}\item[{int}]{n,  }\item[{int}]{s,  }\item[{int}]{d,  }\item[{double}]{e }\end{DoxyParamCaption})}
+
+
+
+Creates a new channel object for given number of nodes, given start node, given number of chains. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em n} & Number of nodes \\
+\hline
+{\em s} & Bootstrapped vertex \\
+\hline
+{\em d} & Number of chains \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classchannel_a91f99424dc3801534ff98e75c3ca6773}\label{classchannel_a91f99424dc3801534ff98e75c3ca6773}} 
+\index{channel@{channel}!canStop@{canStop}}
+\index{canStop@{canStop}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{canStop()}{canStop()}}
+{\footnotesize\ttfamily bool channel\+::can\+Stop (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Indicates whether the computation is complete. 
+
+\begin{DoxyReturn}{Returns}
+true If average occupancies have stabilized 
+
+false If average occupancies have not yet stabilized 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classchannel_a7d25e35676f4bd28bb504cace6931e13}\label{classchannel_a7d25e35676f4bd28bb504cace6931e13}} 
+\index{channel@{channel}!getChain@{getChain}}
+\index{getChain@{getChain}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{getChain()}{getChain()}}
+{\footnotesize\ttfamily int channel\+::get\+Chain (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Indicates whether a particular chain is allowed to push an update. 
+
+If a chain already has an update in the queue then that chain will be denied \begin{DoxyReturn}{Returns}
+chain number of a valid chain to run 
+
+-\/1 if the thread can exit 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classchannel_a7ce043d250a55249836f68256de1133f}\label{classchannel_a7ce043d250a55249836f68256de1133f}} 
+\index{channel@{channel}!getMu@{getMu}}
+\index{getMu@{getMu}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{getMu()}{getMu()}}
+{\footnotesize\ttfamily std\+::vector$<$ double $>$ channel\+::get\+Mu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+gets the Average Occupancies 
+
+\begin{DoxyReturn}{Returns}
+mu The average occupancies in the graph 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classchannel_a0e0745c66e353e64bf5a18db56113761}\label{classchannel_a0e0745c66e353e64bf5a18db56113761}} 
+\index{channel@{channel}!process@{process}}
+\index{process@{process}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{process()}{process()}}
+{\footnotesize\ttfamily void channel\+::process (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Once all chains have pushed their updates, the processing thread is activated. 
+
+Processes all transitions present in the queue \mbox{\Hypertarget{classchannel_aef415d9049f2d7142ba874fed2534f92}\label{classchannel_aef415d9049f2d7142ba874fed2534f92}} 
+\index{channel@{channel}!pushUpdate@{pushUpdate}}
+\index{pushUpdate@{pushUpdate}!channel@{channel}}
+\doxysubsubsection{\texorpdfstring{pushUpdate()}{pushUpdate()}}
+{\footnotesize\ttfamily void channel\+::push\+Update (\begin{DoxyParamCaption}\item[{int}]{chain,  }\item[{std\+::pair$<$ int, int $>$}]{p }\end{DoxyParamCaption})}
+
+
+
+pushes update given by a particular chain into the queue 
+
+
+\begin{DoxyParams}{Parameters}
+{\em chain} & The chain number pushing the update \\
+\hline
+{\em p} & The update in the form of (old position, new position) \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/naive/\mbox{\hyperlink{channel_8h}{channel.\+h}}\item 
+src/naive/\mbox{\hyperlink{channel_8cpp}{channel.\+cpp}}\end{DoxyCompactItemize}

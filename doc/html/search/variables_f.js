@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['weightmap_0',['weightMap',['../NaivePLW_8cpp.html#a5df75d1acd92aa0863c407144e627d81',1,'NaivePLW.cpp']]]
+  ['x_0',['X',['../NaivePLW_8cpp.html#aa4b7536c955a2d8c5a9c2224a55c71a7',1,'NaivePLW.cpp']]]
 ];

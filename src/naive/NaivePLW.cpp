@@ -2,18 +2,32 @@
  * @file NaivePLW.cpp
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
  * @brief One-sink Laplacian Solver Using Random Walks
- * @version 0.5
- * @date 2021-11-22
+ * @version 1.0
+ * @date 2021-2-5
  * 
- * @copyright Copyright (c) 2021
+ * @copyright Copyright (c) 2022
  * 
  */
 
 /************************* Standard libraries Import **************************/
 
 #include<bits/stdc++.h>
+#include<Eigen/Dense>
 
-// Compilation Flag Macros : TIMER, DEBUG, PARALLEL
+// Compilation Flag Macros : TIMER, DEBUG, PARALLEL, STEPBYSTEP
+
+/************************* Custom libraries Import **************************/
+
+#include "indexedSet.h"
+#include "channel.h"
+#include "errorHandler.h"
+
+/************************* Program Wide Macros ********************************/
+
+//#define TIMER
+//#define DEBUG
+#define PARALLEL
+#define STEPBYSTEP
 
 /************************* Basic Macros ***************************************/
 
@@ -48,311 +62,22 @@ template<typename T> inline void outmatrix(std::vector<std::vector<T> > & v) {fo
 int n; ///< Number of Nodes in Graph
 int m; ///< Number of Edges in Graph
 int s; ///< Vertex chosen via bootstrapping indicating high stationary prob. state
-int u; ///< The index of the sink vertex
 
 
+int u = -1; ///< The index of the sink vertex
 int timer = 0; ///< Timer for running the chain serially
+int N_mult = 64; //< Multiplier for number of bootstrapping runs to have
 int N = -1; ///< Number of samples for bootstrapping
 int d = 5; ///< Stores the nunber of chains to run
 
 double sb; ///< Stores the sum of non-sink column vectors
 double eps = 1; ///< Stores the bound on error required
 
-std::mutex io_lock;
-
-
-/// Implements an indexed priority queue
-
-/**
- * Implements an indexed priority queue using a multiset and a dynamic array.
- * Provides insertion and search in O(log(n)) time
- * @tparam T Type of data to be stored in the indexed priority queue
- */
-
-template<typename T>
-class indexedPriorityQueue{
-private:
-  int size; // Number of elements in the indexed priority queue
-  std::multiset<T> set_val; // Multiset to keep track of priorities in increasing order 
-  std::vector<T> array_val; // Dynamic array 
-public:
-  /**
-   * @brief Construct a new indexed Priority Queue object
-   * 
-   */
-  indexedPriorityQueue()
-  {
-    size = 0;
-  }
-
-  /**
-   * @brief Constructs a new indexed Priority Queue object
-   * 
-   * @param sz Size of the new queue
-   * 
-   * All elements are initialized to null type of T
-   */
-  indexedPriorityQueue(int sz)
-  {
-    size = sz;
-    array_val.resize(size);
-    for(auto it : array_val)
-    {
-      set_val.insert(it);
-    }
-  }
-
-  /**
-   * @brief Constructs a new indexed Priority Queue object
-   * 
-   * @param sz Size of the new queue
-   * @param v Initial queue
-   */
-
-  indexedPriorityQueue(int sz, std::vector<T> v)
-  {
-    size = sz;
-    array_val = v;
-    set_val.clear();
-    for(auto it : array_val)
-    {
-      set_val.insert(it);
-    }
-  }
-
-
-  /**
-   * @brief Get the maximum priority object in the queue
-   * 
-   * @return T Returns maximum priority object
-   */
-  T getMax()
-  {
-    if(size == 0)
-    {
-      return -1;
-    }
-    return *(set_val.rbegin());
-  }
-
-  /**
-   * @brief Get the object at index in the queue
-   * 
-   * @param index Index of the required object
-   * @return T Object at index position
-   */
-
-  T getVal(int index)
-  {
-    if(index < 0 || index >= size)
-    {
-      return -1;
-    }
-    return array_val[index];
-  }
-
-  /**
-   * @brief Sets the object at given index
-   * 
-   * @param index Index at which the object is to be set
-   * @param value Value of the object to be set
-   * @return true Value set successfully
-   * @return false Value not set successfully
-   */
-
-  bool setVal(int index, T value)
-  {
-    if(index < 0 || index >= size)
-    {
-      return false;
-    }
-    set_val.erase(set_val.find(array_val[index]));
-    array_val[index] = value;
-    set_val.insert(array_val[index]);
-    return true;
-  }
-};
-
-/**
- * @brief Channel defines the control part of the program
- * 
- * Channel maintains a queue and threads push their updates to it.
- * Once updates from all chains are pushed, it processes those updates.
- * 
- */
-
-class Channel
-{
-private:
-  int T; // Global clock
-  std::vector<int> Q; // Vertex occupancy at given instant
-  std::vector<double> mu; // Average vertex occupancy
-  indexedPriorityQueue<double>* tm; // Indexed priority queue to keep track of the bottleneck vertex
-  std::set<int> inQueue; // All vertices that are currently waiting to be processed
-  std::queue<std::pair<int, int> > R; // Updates waiting to be processed
-  std::vector<std::queue<std::tuple<int, int, int, int> > > S; // Data structure to keep track of updates
-  std::vector<int> L; // Indicates when was the last time a given vertex was updated
-  bool isDone; // Indicator to check if all the processing is complete
-  std::mutex m; // Mutex lock for thread safety
-public:
-  int batches; //  Tells how many batches can the processing thread can go ahead wtih
-  /**
-   * @brief Construct a new Channel object
-   * 
-   */
-  Channel()
-  {
-    T = 0; // Initialize global clock to 0
-    Q.resize(n,0); // Initially all queues empty
-    S.resize(n); // Initialize update tracking for each vertex
-    L.resize(n,0); // Initialize last seen for each vertex
-    mu.resize(n, 0); // Initialize average occupancy at each vertex
-    Q[s] = d; // Place all d packets at s
-    tm = new indexedPriorityQueue<double>(n); // Initialize the indexed priority queue
-    if(tm->setVal(s, INT_MAX) == false) 
-    {
-      std::cout << "Error Initializing timer" << std::endl;
-    }
-    isDone = false; // Initialize isdone to false
-  }
-  /**
-   * @brief Indicates whether a particular chain is allowed to push an update
-   * 
-   * If a chain already has an update in the queue then that chain will be denied
-   * 
-   * @param chain Chain number asking
-   * @return true If the chain is able to proceed
-   * @return false If the chain already has an element in the queue and cannot proceed
-   */
-  bool canProceed(int chain)
-  {
-    return (inQueue.find(chain) == inQueue.end()); // The chain already has a transition in the queue
-  }
-  /**
-   * @brief Indicates whether the computation is complete
-   * 
-   * @return true If average occupancies have stabilized
-   * @return false If average occupancies have not yet stabilized
-   */
-  bool canStop()
-  {
-    return isDone;
-  }
-
-  /**
-   * @brief pushes update given by a particular chain into the queue
-   * 
-   * @param chain Chain number of the chain pushing the update
-   * @param p The update in the form of (old position, new position)
-   */
-  void pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
-  {
-    #ifdef DEBUG
-      io_lock.lock();
-      if(!isDone)
-      {
-        std::cout << "Chain number : " << chain << " pushed a transition from: " << p.first << " to " << p.second << std::endl ;
-      }
-      io_lock.unlock();
-    #endif
-    inQueue.insert(chain);
-    R.push(p); // Push transition in the queue
-    m.lock(); // Locks the queue to check whether all chains have pushed their updates
-    if(inQueue.size() == (size_t)d) // If all chains have transitions in the queue, then we can clear the chain
-    {
-      #ifdef DEBUG
-        io_lock.lock();
-        std::cout << "Clearing the queue" << std::endl ;
-        io_lock.unlock();
-      #endif
-      inQueue.clear(); // Clear the queue of all threads
-      R.push({-1,-1});
-      batches++;
-      process();
-    }
-    m.unlock();
-  }
-
-  /**
-   * @brief Once all chains have pushed their updates, the processing thread is activated.
-   * 
-   * Processes all transitions present in the queue
-   * 
-   */
-  void process()
-  {
-    if(canStop())
-    {
-      return; // Nothing to do
-    }
-    while(batches > 0)
-    {
-      batches--; // As this iteration will process one batch
-      std::set<int> updatedVertices;
-      while(!R.empty() && R.front().first != -1) // Updates all transitions
-      {
-        T++;
-        std::pair<int, int> p = R.front(); // Check out the front of the queue
-        R.pop(); // Pop the front of the queue
-        S[p.first].push(std::make_tuple(Q[p.first]-1, Q[p.first], T, L[p.first]));
-        S[p.second].push(std::make_tuple(Q[p.second]+1, Q[p.second], T, L[p.second]));
-        Q[p.first]--; // The packet left p.first
-        Q[p.second]++; // The packet arrived at p.second
-        L[p.first] = T; // Updates last seen for old vertex
-        L[p.second] = T; // Updates last seen for new vertex
-        updatedVertices.insert(p.first);
-        updatedVertices.insert(p.second);
-      }
-      while(!R.empty() && R.front().first == -1)
-      {
-        R.pop(); // Clear dummy transition
-      }
-      for(auto w : updatedVertices)
-      {
-        while(!S[w].empty())
-        {
-          auto s = S[w].front(); // Current update to be processed
-          S[w].pop();
-          int nq = std::get<0>(s); // New occupancy at w
-          int oq = std::get<1>(s); // Old occupancy at w
-          int nt = std::get<2>(s); // Time at which occupancy changed
-          int ot = std::get<3>(s); // Last seen time before the change in occupancy
-          double z = mu[w] * ot + oq * (nt - ot - 1) + nq;
-          z /= nt;
-          mu[w] = z; // Updates the average occupancy at this point
-          double disc = 1 + 4 * ((fabs(nq-mu[w]) * ot)/eps);
-          double temp = sqrt(disc);
-          temp += 1;
-          temp /= 2;
-          tm->setVal(w, temp); // Updates the countdown timer in the indexed priority queue
-          #ifdef DEBUG
-            io_lock.lock();
-            std::cout << "Timer for: " << w << " changed to: " << temp << std::endl;
-            std::cout << "Time now: " << T << ", time to end: " << tm->getMax() << std::endl ;
-            io_lock.unlock();
-          #endif
-        }
-      }
-      if(tm->getMax() <= T) // If the maximum time for any vertex to stabilize in occupancy is less than current time, we stop
-      {
-        isDone = true;
-      }
-    }
-  }
-};
-Channel *chan;
+std::mutex io_lock;  ///< Locks STDIN STDOUT manually
+ 
+channel *chan;
 
 std::vector<int> X_P; // State vector for multi-dimension markov chain
-
-
-
-#ifdef TIMER // Declares variables for storing timestamps and durations if -DTIMER is passed as a flag
-
-std::chrono::time_point<std::chrono::high_resolution_clock> start; // Starting Time
-std::chrono::time_point<std::chrono::high_resolution_clock> stop1, stop2, stop3, stop4, stop5, stop6; // Various Stop Times
-std::chrono::duration<long int, std::ratio<1, 1000000>> dur1, dur2, dur3, dur4, dur5; // Various durations
-
-#endif
 
 
 std::vector<int> identity; ///< Identity vector
@@ -366,18 +91,14 @@ std::vector<double> j; ///< Column vector j as per definition
 std::vector<double> D; ///< Stores total weight sum for the vertices
 
 std::vector<std::pair<double, int> > sources; ///< Distribution of sources
-
-std::vector<std::vector<int> > adj_list; ///< Adjacency list for the given graph
-
-std::vector<std::tuple<int, int, double> > edges; ///< List of edges of the graph
-
-std::vector<std::vector<std::pair<double, int> > > P; ///< Transition Matrix 
+std::vector<std::vector<double> > P; ///< Transition Matrix
+std::vector<std::vector<double> > L; ///< Laplacian Matrix for the given graph
 std::vector<std::vector<std::pair<double, int> > > Cum_P; ///< Cumulative Transition Matrix
 
-
-std::map<std::pair<int, int>, double> weightMap; ///< Contains mapping from pair of nodes to their corresponding edge weight
-
+std::vector<int> Shat; // Represents the vertices we picked
 std::map<std::pair<int, int>, std::vector< std::pair<double, int> > > HittingTable; ///< Stores the computed hitting table distributions for different pair of nodes
+std::vector<std::mutex> sourceLock; ///< Locks sources to generate hitting table.
+std::vector<std::mutex> X_lock;
 
 /************************* Function Prototypes ********************************/
 
@@ -390,14 +111,12 @@ bool checkConnected();
 template<typename T>
 bool cumDist(); 
 
-void throwError(std::string err); 
-
 template<typename T>
 T distSelector(const std::vector<std::pair<double, T> > &dist); 
 
 void generateHittingTable(int start, int end);
 
-void runChainParallelInstance(); 
+void *runChainParallelInstance(void *ptr); 
 
 /************************* Useful Functions Definitions ***********************/
 
@@ -413,7 +132,7 @@ void runChain();
 
 void end();
 
-/************************* Utility Function  **********************************/
+/************************* Utility Functions **********************************/
 
 /**
  * @brief Runs a Depth first search to mark all connected nodes
@@ -428,13 +147,13 @@ void DFS(int node, std::vector<int> &visited, int &cnt)
   cnt++; // increase counter indicating total number of connected vertices
   visited[node] = 1; // color of node is color_val
 
-  for(auto it : adj_list[node]) // Iterate through the neighbors of current node
+  for(auto it : Cum_P[node]) // Iterate through the neighbors of current node
   {
-    if(visited[it] != -1) // Node already visited
+    if(visited[it.second] != -1) // Node already visited
     {
       continue;
     }
-    DFS(it, visited, cnt); // Node not visited, apply DFS recursively
+    DFS(it.second, visited, cnt); // Node not visited, apply DFS recursively
   }
 }
 
@@ -475,18 +194,6 @@ bool cumDist(const std::vector<std::pair<double, T> > &dist)
     prev = it.first; // update previous entry
   }
   return (prev==1); // last entry of the distribution should be 1
-}
-
-/**
- * @brief A utility function to throw errors and exit the program
- * 
- * @param err Error encoded as string
- */
-
-void throwError(std::string err)
-{
-  std::cout << " Fatal Error: " << err << std::endl;
-  exit(1);
 }
 
 /**
@@ -549,6 +256,217 @@ T distSelector(const std::vector<std::pair<double, T> > &dist)
   return dist[mid+1].second;
 }
 
+template<typename T>
+std::vector<T> matrix_vector_mult(std::vector<std::vector<T> > mat, std::vector<T> v)
+{
+  std::vector<T> ans;
+  if(mat.empty())
+    return ans;
+  int n = mat[0].size();
+  if(n != (int)v.size() || n == 0)
+  {
+    errorHandler err("Matrix vector multiplication: bad dimensions");
+  }
+  for(int i = 0; i < (int)mat.size(); i++)
+  {
+    if(n != (int)mat[i].size())
+    {
+      errorHandler err("Matrix vector multiplication: not a matrix");
+    }
+    T r = 0;
+    for(int j = 0; j < n; j++)
+    {
+      r += mat[i][j] * v[j]; 
+    }
+    ans.push_back(r);
+  }
+  return ans;
+}
+
+template<typename T>
+std::vector<T> vector_scalar_mult(std::vector<T> v, T val)
+{
+  for(auto &it : v)
+  {
+    it *= val;
+  }
+  return v;
+}
+
+template<typename T>
+std::vector<T> vector_addition(std::vector<T> a, std::vector<T> b)
+{
+  if(a.size() != b.size())
+  {
+    errorHandler err("Vector addition dimension mismatch");
+  }
+  for(int i = 0; i < (int)a.size(); i++)
+  {
+    a[i] += b[i];
+  }
+  return a;
+}
+
+template<typename T>
+T l1_norm(std::vector<T> a)
+{
+  T r = 0;
+  for(auto it : a)
+  {
+    r += std::abs(it);
+  }
+  return r;
+}
+
+template<typename T>
+T l2_norm(std::vector<T> a)
+{
+  T r = 0;
+  for(auto it : a)
+  {
+    r += (it * it);
+  }
+  r = sqrt(r);
+  return r;
+}
+
+template<typename T>
+T inf_norm(std::vector<T> a)
+{
+  T r = 0;
+  for(auto it : a)
+  {
+    if(r < std::abs(it))
+    {
+      r = std::abs(it);
+    }
+  }
+  return r;
+}
+
+/************************* Core Functions ***********************************/
+
+
+/**
+ * @brief Initializes the variables, i.e. Takes input
+ * 
+ */
+
+void init()
+{
+
+  int i1, i2; // Temporary Int Variables
+  double d1; // Temporary Double Variables
+
+
+  scanf("%d %d\n", &n, &m); // Input Number of nodes and Number of edges
+
+  Cum_P.resize(n); // Initialize Cumulative Transition Matrix
+  P.resize(n, std::vector<double>(n,0));
+  L.resize(n, std::vector<double>(n,0));
+  D.resize(n); // Initialize Total node weight tracker
+  Shat.resize(n);
+  std::mutex tmp;
+  std::vector<std::mutex> mm(n);
+  sourceLock.swap(mm); // Lock sources
+
+
+  /*****************************Take Graph Input*******************************/
+
+  for(int i = 0; i < m; i++) // Input the edges
+  {
+    scanf("%d %d %lf\n", &i1, &i2, &d1); // Takes in the incident vertices and their edge-weight
+    D[i1] += d1; // Add weight of given edges to total node weight
+    D[i2] += d1; // Add weight of given edges to total node weight
+    Cum_P[i1].push_back(std::make_pair(D[i1], i2)); // Add i2 to cumulative distribution of i1
+    Cum_P[i2].push_back(std::make_pair(D[i2], i1)); // Add i1 to cumulative distribution of i2
+    P[i1][i2] = d1;
+    P[i2][i1] = d1;
+    L[i1][i2] = -1 * d1;
+    L[i2][i1] = -1 * d1;
+  }
+
+  if(!checkConnected()) // Check if the graph is connected
+  {
+    errorHandler err("Given Graph is not connected");
+  }
+
+
+  /*****************************Create Cumulative Transition Matrix***********/
+
+  for(int i = 0; i < n; i++) // Setting up the transition matrix for our markov chain
+  {
+    for(auto &it : Cum_P[i])
+    {
+      it.first /= D[i];
+    }
+    for(int j = 0; j < n; j++)
+    {
+      P[i][j] = P[i][j] / D[i];
+    }
+    L[i][i] = D[i];
+  }
+  
+
+  /*****************************Take Column Vector Input***********************/
+
+
+  scanf("%d\n", &i1); // Input the dimension of column vector, this should equal n
+
+  if(i1 != n)
+  {
+    errorHandler err("Dimension mismatch between Graph with dimension: " + std::to_string(n) + " and b vector with dimension" + std::to_string(i1));
+  }
+
+  b.resize(n); // Initialize b
+  j.resize(n); // Initialize j
+
+  for(int i = 0; i < n; i++)
+  {
+    scanf("%lf\n", &b[i]); // Taking input bi
+
+    if(b[i] < 0 && u == -1) // Finding the sink
+    {
+      u = i; // Indentified u
+    }
+    else if(b[i] < 0) // Identified Multiple sinks
+    {
+      errorHandler err("Multiple Sinks");
+    }
+    else // Possible source
+    {
+      sb += b[i]; // Sum of all b cordinates
+    }
+  }
+
+  d1 = 0; // Cumulative j
+
+  for(int i = 0; i < n; i++)
+  {
+    if(b[i] <= 0) // Sink vertex
+    {
+      j[i] = 0; // j_sink = 0 by definition
+    }
+    else
+    {
+      j[i] = b[i]/sb; // Using definition of j
+      d1 += j[i]; // Updating cumulative value
+      sources.push_back(std::make_pair(d1, i)); // Making cumulative probability distribution
+    }
+  }
+
+  d1 = 0; // Culumative j
+
+  P[u] = j;
+  Cum_P[u] = sources; // Initializing Cum_P[u]
+
+  scanf("%lf", &eps); // Input the error parameter
+  eps = 1;
+  eps /= (double)n;
+  eps /= (double)n;
+}
+
+
 /**
  * @brief Generates Hitting table for vertices starting from start and ending at end
  * 
@@ -592,202 +510,59 @@ void generateHittingTable(int start, int end)
  * @return void* Exit value of thread(NULL)
  */
 
-void *runChainParallelInstance(void* chain_number)
+void *runChainParallelInstance(void *ptr)
 {
-  int *dim_val = (int*)chain_number; //Extract chain number from void pointer
-  int i1, i2; // Temporary variables
-  i1 = *dim_val; // i1 is the chain number for this thread
-  #ifdef DEBUG
-    io_lock.lock();
-    std::string s = "Started Running Chain: " + std::to_string(i1) + "\n";
-    std::cerr << s;
-    io_lock.unlock();
-  #endif
   while(true)
   {
-    if(chan->canProceed(i1)) // If queue allows us to make a transition, we go ahead
+    int i1 = chan->getChain();
+    if(i1 != -1) // If queue allows us to make a transition, we go ahead
     {
-      if(chan->canStop()) // If infinite norm of error is bounded, we stop the chain
+      X_lock[i1].lock();
+      int i2 = distSelector(Cum_P[X_P[i1]]); // Find the next vertex
+      if(i2 < 0 || i2 >= n)
       {
-        #ifdef DEBUG
-          //std::cout << "Stop signal recieved at thread with chain number: " << i1 << std::endl;
-        #endif
-        break;
+        errorHandler err("Bad selection by distSelector");
       }
-
-      i2 = distSelector(Cum_P[X_P[i1]]); // Find the next vertex
-      chan->pushUpdate(i1, std::make_pair(X_P[i1], i2)); // Push update
-      X_P[i1] = i2; // Update the chain
-
+      int a = X_P[i1];
+      int b = i2;
+      X_P[i1] = b;
+      chan->pushUpdate(i1, std::make_pair(a, b)); // Push update
+      X_lock[i1].unlock();
+    }
+    else
+    {
+      break;
     }
   }
   pthread_exit(NULL);
 }
 
 
-/**
- * @brief Initializes the variables, i.e. Takes input
- * 
- */
-
-void init()
+void *bootstrapParallel(void *ar)
 {
-
-  int i1, i2; // Temporary Int Variables
-  double d1; // Temporary Double Variables
-
-  #ifdef TIMER
-
-  start = std::chrono::high_resolution_clock::now(); // Start clock for diagnostic purposes
-
-  #endif
-
-  scanf("%d %d\n", &n, &m); // Input Number of nodes and Number of edges
-  edges.resize(m); // Initialize edges vector
-  adj_list.resize(n); // Initialize adjacency list vector
-  P.resize(n); // Initialize Transition Matrix
-  Cum_P.resize(n); // Initialize Cumulative Transition Matrix
-  D.resize(n); // Initialize Total node weight tracker
-
-  #ifdef TIMER
-
-  stop1 = std::chrono::high_resolution_clock::now(); // First breakpoint for timer
-  dur1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start); // Duration for taking in initial input and initializing vectors
-  std::cout << "Base Input Time: " << (double)dur1.count()/((double)1000000) << " seconds" << std::endl; // Print duration on commandline
-
-  #endif
-
-  /*****************************Take Graph Input*******************************/
-
-  for(int i = 0; i < m; i++) // Input the edges
-  {
-    scanf("%d %d %lf\n", &i1, &i2, &d1); // Takes in the incident vertices and their edge-weight
-    adj_list[i1].push_back(i2); // Setup adjacency list
-    adj_list[i2].push_back(i1); // Setup adjacency list
-    weightMap[std::make_pair(i1, i2)] = d1; // Map given edge weight
-    weightMap[std::make_pair(i2, i1)] = d1; // Map given edge weight
-    D[i1] += d1; // Add weight of given edges to total node weight
-    D[i2] += d1; // Add weight of given edges to total node weight
-    edges[i] = std::make_tuple(i1,i2,d1); // append given edge to the edges
-  }
-
-  if(!checkConnected()) // Check if the graph is connected
-  {
-    throwError("Given Graph is not connected");
-  }
-
-  #ifdef TIMER
-
-  stop2 = std::chrono::high_resolution_clock::now(); // Second breakpoint for timer
-  dur2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - stop1); // Duration for taking in graph input
-  std::cout << "Graph Input Time: " << (double)dur2.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
-
-  #endif
-
-  /*****************************Create Transition Matrix***********************/
-
-  for(int i = 0; i < n; i++) // Setting up the transition matrix for our markov chain
-  {
-    d1 = 0; // Cumulative Probability counter
-
-    if(D[i] < 0.00000001) // Check if cumulative edge weight of a vertex is very low or 0
-    {
-      throwError("Vertex " + std::to_string(D[i]) + " is either fully or almost disconnected."); // Throw Error and exit
-    }
-
-    for(auto it : adj_list[i]) // Scan through all neighboring vertices
-    {
-      double d2 = weightMap[{i, it}]; // Get the weight of the required edge
-      d2 /= D[i]; // Find relative weightage of this edge
-      d1 += d2; // Add it's probability to the cumulative value
-      if(d2 > 0) // If there's a chance to go from i to it, we push it in our transition matrix
-      {
-        P[i].push_back(std::make_pair(d2,it)); // Update transition matrix
-        Cum_P[i].push_back(std::make_pair(d1,it)); // Update the cumulative transition matrix
-      }
-    }
-  }
-
-  #ifdef TIMER
-
-  auto stop3 = std::chrono::high_resolution_clock::now(); // Third breakpoint for timer
-  auto dur3 = std::chrono::duration_cast<std::chrono::microseconds>(stop3 - stop2); // Duration for setting up transition matrix
-  std::cout << "Transition Matrix Computation Time: " << (double)dur3.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
-
-  #endif
-
-  /*****************************Take Column Vector Input***********************/
-
-
-  scanf("%d\n", &i1); // Input the dimension of column vector, this should equal n
-
-  if(i1 != n)
-  {
-    throwError("Dimension mismatch between Graph with dimension: " + std::to_string(n) + " and b vector with dimension" + std::to_string(i1));
-  }
-
-  b.resize(i1); // Initialize b
-  j.resize(i1); // Initialize j
-
-  for(int i = 0; i < i1; i++)
-  {
-    scanf("%lf\n", &b[i]); // Taking input bi
-    if(b[i] < 0) // Finding the sink
-    {
-      sb = b[i] * -1; // Sum of all non-sink vertices
-      u = i; // Indentified u
-    }
-  }
-  double sum = 0; // Cumulative j
-
-  for(int i = 0; i < i1; i++)
-  {
-    if(b[i] < 0) // Sink vertex
-    {
-      j[i] = 0; // j_sink = 0 by definition
-    }
-    else
-    {
-      j[i] = b[i]/sb; // Using definition of j
-    }
-    if(j[i] > 0)
-    {
-      sum += j[i]; // Updating cumulative value
-      sources.push_back(std::make_pair(sum, i)); // Making cumulative probability distribution
-    }
-  }
-
-  d1 = 0; // Culumative j
-
-  P[u].clear(); // Initializing P[u]
-  Cum_P[u].clear(); // Initializing Cum_P[u]
-
-  /*****************************Updating Transition Matrix for sink************/
-
+  io_lock.lock();
+  //std::cout << "Thread created " << q << std::endl;
+  io_lock.unlock();
+  /*
   for(int i = 0; i < n; i++)
   {
-    if(j[i] > 0)
+    int what = distSelector(sources); // Picking a source
+    sourceLock[what].lock();
+    if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end()) // No paths between source sink pair
     {
-      P[u].push_back(std::make_pair(j[i],i)); // Push back non-zero j value into transition matrix
-      d1 += j[i]; // Push back non-zero j value into transition matrix
-      Cum_P[u].push_back(std::make_pair(d1,i)); // Build cumulative transition matrix for sink
+      generateHittingTable(what, u); // Generate a path between source and sink
     }
+    sourceLock[what].unlock();
+    int uhat = distSelector(HittingTable[std::make_pair(what,u)]); // Pick a vertex from the given distribution
+    Shat[uhat]++; // Increment counter for the chosen vertex
   }
-
-  scanf("%lf", &eps); // Input the error parameter
-  eps = 1;
-  eps /= (double)n;
-  printf("%lf\n", eps);
-  //std::cout << eps << std::endl;
-  #ifdef TIMER
-
-  stop4 = std::chrono::high_resolution_clock::now(); // Fourth breakpoint for timer
-  dur4 = std::chrono::duration_cast<std::chrono::microseconds>(stop4 - stop3); // Duration for taking column vector input
-  std::cout << "Column Vector Input Time: " << (double)dur4.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
-
-  #endif
-
+  */
+  io_lock.lock();
+  //std::cout << "Thread destroyed " << q << std::endl;
+  io_lock.unlock();
+  pthread_exit(NULL);
 }
+
 
 /**
  * @brief Bootstrap runs the bootstrapping algorithm and finds the ideal vertex to start the chain from
@@ -798,32 +573,71 @@ void bootstrap()
 {
   if(N == -1)
   {
-    N = 15 * n; // Default Initialization of the chain
+    N = N_mult * n; // Default Initialization of the chain
   }
+  
+  std::vector<pthread_t> threads(N_mult);  
+  
 
-  std::unordered_map<int, int> Shat; // Represents the vertices we picked
-
-  for(int t = 0; t < N; t++)
+  for(int t = 0; t < N_mult; t++)
   {
-    int what = distSelector(sources); // Picking a source
-    if(HittingTable.find(std::make_pair(what, u)) == HittingTable.end()) // No paths between source sink pair
+    int err = pthread_create(&(threads[t]), NULL, bootstrapParallel, NULL);
+    if (err != 0)
     {
-      generateHittingTable(what, u); // Generate a path between source and sink
+      errorHandler err("Error creating thread");
     }
-    int uhat = distSelector(HittingTable[std::make_pair(what,u)]); // Pick a vertex from the given distribution
-    Shat[uhat]++; // Increment counter for the chosen vertex
+    /*else 
+    {
+      std::cout << "Thread " << i << "created." << std::endl;
+    }*/
   }
+  std::cerr << "Here" << std::endl;
+  for(int t = 0; t < N_mult; t++)
+  {
+    pthread_join(threads[t], NULL);
+  }
+
   int maxv = -1; // Keeps check of maximum freq
   int shat = -1; // Keeps track of best vertex
-  for(auto it : Shat)
+  for(int i = 0; i < n; i++)
   {
-    if(maxv < it.second)
+    if(maxv < Shat[i])
     {
-      maxv = it.second; // Update new maximum
-      shat = it.first; // Update new winner
+      maxv = Shat[i]; // Update new maximum
+      shat = i; // Update new winner
     }
   }
   s = shat; // Assign chosen vertex to s
+  std::cerr << "Chosen vertex: " << s << std::endl;
+}
+
+void checkBootStrap()
+{
+  std::cout << n << std::endl << n << std::endl;
+  for(auto it : P)
+  {
+    for(auto jt : it)
+    {
+      std::cout << jt << ' ';
+    }
+    std::cout << std::endl;
+  }
+  std::vector<int> v(n,0);
+  Eigen::MatrixXd A(n+1,n);
+  Eigen::VectorXd B = Eigen::ArrayXd::Zero(n+1);
+  for(int i = 0; i < n; i++)
+  {
+    for(int q = 0; q < n; q++)
+    {
+      A(i,q) = P[q][i];
+    }
+    A(i, i) = -1;
+  }
+  for(int q = 0; q < n; q++)
+  {
+    A(n,q) = 1; 
+  }
+  B(n) = 1;
 }
 
 /**
@@ -872,34 +686,22 @@ void runChainSerial()
  * @brief Runs the chain parallely
  * 
  */
+
 void runChainParallel()
 {
-  chan = new Channel();
-  #ifdef DEBUG
-    io_lock.lock();
-    std::cout << "runChainParallel Started" << std::endl;
-    io_lock.unlock();
-  #endif
+  chan = new channel(n, s, d, eps);
+  std::vector<std::mutex> mm(d);
+  X_lock.swap(mm);
   std::vector<pthread_t> threads(d);
-  identity.resize(d);
-
   for(int i = 0; i < d; i++)
   {
-    identity[i] = i;
-    #ifdef DEBUG
-      io_lock.lock();
-      std::cout << "Starting Thread " << *((int*)((void*)&identity[i])) << std::endl;
-      io_lock.unlock();
-    #endif
-    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, (void*)&identity[i]);
+    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, NULL);
     if (err != 0)
     {
-      io_lock.lock();
-      std::cout << "Error creating thread at index: " << i << "\nExiting" << std::endl;
-      io_lock.unlock();
-      exit(1);
+      errorHandler err("Error Creating Thread while running the chain");
     }
   }
+  //std::cerr << "Here" << std::endl;
   while(!chan->canStop())
   {
     continue;
@@ -909,7 +711,6 @@ void runChainParallel()
 
 /**
  * @brief runs the chain 
- * 
  */
 
 void runChain()
@@ -917,9 +718,7 @@ void runChain()
   /***************************** Initialization *******************************/
 
   X_P.resize(d,s);
-  #ifdef DEBUG
-    std::cout << "runChain Started" << std::endl;
-  #endif
+  //std::cout << "Starting Parallel Chain" << std::endl;
   runChainParallel();
   return;
 }
@@ -931,17 +730,37 @@ void runChain()
 
 void end()
 {
-  //std::cout << s << std::endl;
-  #ifdef TIMER
-
-  stop5 = std::chrono::high_resolution_clock::now(); // Final breakpoint for timer
-  dur5 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - stop4); // Duration for bootstrapping
-  std::cout << "Bootstrapping Time: " << (double)dur5.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
-
-  dur6 = std::chrono::duration_cast<std::chrono::microseconds>(stop5 - start); // Complete duration for program
-  std::cout << "Total Time: " << (double)dur6.count()/(double)1000000 << " seconds" << std::endl; // Print duration on commandline
-
-  #endif
+  std::vector<double> x = chan->getMu();
+  double z = x[u];
+  x[u] = 0;
+  double z_star = 0;
+  for(int i = 0; i < n; i++)
+  {
+    x[i] /= (z * D[i]);
+    z_star += x[i];
+  }
+  z_star /= n;
+  for(int i = 0; i < n; i++)
+  {
+    x[i] -= z_star;
+    x[i] *= sb;
+  }
+  //outcontainer(x);
+  std::vector<double> Lx = matrix_vector_mult(L, x);
+  //outcontainer(Lx);
+  std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(b, -1.0));
+  //outcontainer(Lx_b);
+  std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
+  std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
+  std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
+  std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(b) << std::endl; 
+  std::cout << "L1 norm(normalized to n): " << l1_norm(Lx_b) / n << std::endl; 
+  std::cout << "L2 norm(normalized to b): " << l2_norm(Lx_b) / l2_norm(b) << std::endl;
+  std::cout << "L2 norm(normalized to n): " << l2_norm(Lx_b) / n << std::endl;
+  std::cout << "Infinity norm(normalized to b): " << inf_norm(Lx_b) / inf_norm(b) << std::endl;
+  std::cout << "Infinity norm(normalized to n): " << inf_norm(Lx_b) / n << std::endl;
+  std::cout << "Averaged L1 norm (L1 norm divided by n): " << l1_norm(Lx_b) / n  << std::endl; 
+  std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (n * l1_norm(b)) << std::endl; 
 }
 
 /**
@@ -964,34 +783,17 @@ int main()
 
   init();
 
-  #ifdef DEBUG
-    io_lock.lock();
-    std::cout << "Completed Initialization" << std::endl;
-    io_lock.unlock();
-  #endif
+  //bootstrap();
 
-  bootstrap();
+  //checkBootStrap();
 
-  #ifdef DEBUG
-    io_lock.lock();
-    std::cout << "Completed Bootstrapping" << std::endl;
-    io_lock.unlock();
-  #endif
+  //return 0;
+
+  s = 0;
 
   runChain();
 
-  #ifdef DEBUG
-    io_lock.lock();
-    std::cout << "Completed Running the Chain" << std::endl;
-    io_lock.unlock();
-  #endif
-
   end();
 
-  #ifdef DEBUG
-    io_lock.lock();
-    std::cout << "Completed Final formalities" << std::endl;
-    io_lock.unlock();
-  #endif
 
 }

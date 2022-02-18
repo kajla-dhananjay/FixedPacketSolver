@@ -1,0 +1,25 @@
+\hypertarget{indexedSet_8h_source}{}\doxysection{indexed\+Set.\+h}
+\label{indexedSet_8h_source}\index{src/naive/indexedSet.h@{src/naive/indexedSet.h}}
+\mbox{\hyperlink{indexedSet_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 }
+\DoxyCodeLine{12 \textcolor{preprocessor}{\#ifndef \_\_INDEXED\_SET\_H\_}}
+\DoxyCodeLine{13 \textcolor{preprocessor}{\#define \_\_INDEXED\_SET\_H\_}}
+\DoxyCodeLine{14 }
+\DoxyCodeLine{15 \textcolor{keyword}{template}<\textcolor{keyword}{typename} T>}
+\DoxyCodeLine{16 \textcolor{keyword}{class }\mbox{\hyperlink{classindexedSet}{indexedSet}}\{}
+\DoxyCodeLine{17 \textcolor{keyword}{private}:}
+\DoxyCodeLine{18   std::multiset<T> set\_val; \textcolor{comment}{// Multiset to keep track of priorities in increasing order }}
+\DoxyCodeLine{19   std::vector<T> array\_val; \textcolor{comment}{// Dynamic array }}
+\DoxyCodeLine{20 \textcolor{keyword}{public}:}
+\DoxyCodeLine{21   \mbox{\hyperlink{classindexedSet_afad37cb3a2e8e3b33b1de20117b22ba7}{indexedSet}}(); \textcolor{comment}{// Default Constructor}}
+\DoxyCodeLine{22   \mbox{\hyperlink{classindexedSet_afad37cb3a2e8e3b33b1de20117b22ba7}{indexedSet}}(\textcolor{keywordtype}{int} sz); \textcolor{comment}{// Constructor to initiate IS of a given size}}
+\DoxyCodeLine{23   \mbox{\hyperlink{classindexedSet_afad37cb3a2e8e3b33b1de20117b22ba7}{indexedSet}}(std::vector<T> v); \textcolor{comment}{// Constructor to initiate IS for given vector }}
+\DoxyCodeLine{24   T \mbox{\hyperlink{classindexedSet_a88b4fa3d68256bd31172106d2a49f207}{getMax}}(); \textcolor{comment}{// Returns the maximum value present in the IS}}
+\DoxyCodeLine{25   T \mbox{\hyperlink{classindexedSet_a5ba894f287754abad382850edf51bf43}{getVal}}(\textcolor{keywordtype}{int} index); \textcolor{comment}{// Returns the value at the given index}}
+\DoxyCodeLine{26   \textcolor{keywordtype}{void} \mbox{\hyperlink{classindexedSet_a3958453bf29dfc679fc8dd7593a57cb9}{setVal}}(\textcolor{keywordtype}{int} index, T value); \textcolor{comment}{// Updates the given index to the given value}}
+\DoxyCodeLine{27 \};}
+\DoxyCodeLine{28 }
+\DoxyCodeLine{29 \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,120 @@
+\hypertarget{classindexedSet}{}\doxysection{indexed\+Set\texorpdfstring{$<$}{<} T \texorpdfstring{$>$}{>} Class Template Reference}
+\label{classindexedSet}\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classindexedSet_afad37cb3a2e8e3b33b1de20117b22ba7}\label{classindexedSet_afad37cb3a2e8e3b33b1de20117b22ba7}} 
+{\bfseries indexed\+Set} ()
+\begin{DoxyCompactList}\small\item\em Construct a new indexed Set object. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classindexedSet_a7d5856e5def86a48fce7680ad00fd9fa}{indexed\+Set}} (int sz)
+\begin{DoxyCompactList}\small\item\em Constructs a new indexed Set object. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classindexedSet_a9fd0c09d70c4c8569b78d223893f774b}{indexed\+Set}} (std\+::vector$<$ T $>$ v)
+\begin{DoxyCompactList}\small\item\em Constructs a new indexed Set object. \end{DoxyCompactList}\item 
+T \mbox{\hyperlink{classindexedSet_a88b4fa3d68256bd31172106d2a49f207}{get\+Max}} ()
+\begin{DoxyCompactList}\small\item\em Get the maximum object in the set. \end{DoxyCompactList}\item 
+T \mbox{\hyperlink{classindexedSet_a5ba894f287754abad382850edf51bf43}{get\+Val}} (int index)
+\begin{DoxyCompactList}\small\item\em Get the object at index in the queue. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classindexedSet_a3958453bf29dfc679fc8dd7593a57cb9}{set\+Val}} (int index, T value)
+\begin{DoxyCompactList}\small\item\em Sets the object at given index. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classindexedSet_a7d5856e5def86a48fce7680ad00fd9fa}\label{classindexedSet_a7d5856e5def86a48fce7680ad00fd9fa}} 
+\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}!indexedSet@{indexedSet}}
+\index{indexedSet@{indexedSet}!indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{indexedSet()}{indexedSet()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+\mbox{\hyperlink{classindexedSet}{indexed\+Set}}$<$ T $>$\mbox{\hyperlink{classindexedSet}{\+::indexed\+Set}} (\begin{DoxyParamCaption}\item[{int}]{sz }\end{DoxyParamCaption})}
+
+
+
+Constructs a new indexed Set object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sz} & Size of the new Set\\
+\hline
+\end{DoxyParams}
+All elements are initialized to null type of T \mbox{\Hypertarget{classindexedSet_a9fd0c09d70c4c8569b78d223893f774b}\label{classindexedSet_a9fd0c09d70c4c8569b78d223893f774b}} 
+\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}!indexedSet@{indexedSet}}
+\index{indexedSet@{indexedSet}!indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{indexedSet()}{indexedSet()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+\mbox{\hyperlink{classindexedSet}{indexed\+Set}}$<$ T $>$\mbox{\hyperlink{classindexedSet}{\+::indexed\+Set}} (\begin{DoxyParamCaption}\item[{std\+::vector$<$ T $>$}]{v }\end{DoxyParamCaption})}
+
+
+
+Constructs a new indexed Set object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sz} & Size of the new queue \\
+\hline
+{\em v} & Initial queue \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classindexedSet_a88b4fa3d68256bd31172106d2a49f207}\label{classindexedSet_a88b4fa3d68256bd31172106d2a49f207}} 
+\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}!getMax@{getMax}}
+\index{getMax@{getMax}!indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{getMax()}{getMax()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+T \mbox{\hyperlink{classindexedSet}{indexed\+Set}}$<$ T $>$\+::get\+Max}
+
+
+
+Get the maximum object in the set. 
+
+\begin{DoxyReturn}{Returns}
+T Returns the maximum object in the set 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classindexedSet_a5ba894f287754abad382850edf51bf43}\label{classindexedSet_a5ba894f287754abad382850edf51bf43}} 
+\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}!getVal@{getVal}}
+\index{getVal@{getVal}!indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{getVal()}{getVal()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+T \mbox{\hyperlink{classindexedSet}{indexed\+Set}}$<$ T $>$\+::get\+Val (\begin{DoxyParamCaption}\item[{int}]{index }\end{DoxyParamCaption})}
+
+
+
+Get the object at index in the queue. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & Index of the required object \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+T Object at index position 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classindexedSet_a3958453bf29dfc679fc8dd7593a57cb9}\label{classindexedSet_a3958453bf29dfc679fc8dd7593a57cb9}} 
+\index{indexedSet$<$ T $>$@{indexedSet$<$ T $>$}!setVal@{setVal}}
+\index{setVal@{setVal}!indexedSet$<$ T $>$@{indexedSet$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{setVal()}{setVal()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+void \mbox{\hyperlink{classindexedSet}{indexed\+Set}}$<$ T $>$\+::set\+Val (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{T}]{value }\end{DoxyParamCaption})}
+
+
+
+Sets the object at given index. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & Index at which the object is to be set \\
+\hline
+{\em value} & Value of the object to be set \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true Value set successfully 
+
+false Value not set successfully 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/naive/\mbox{\hyperlink{indexedSet_8h}{indexed\+Set.\+h}}\item 
+src/naive/\mbox{\hyperlink{indexedSet_8cpp}{indexed\+Set.\+cpp}}\end{DoxyCompactItemize}

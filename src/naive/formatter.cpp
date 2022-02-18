@@ -40,7 +40,7 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
       DFS(i, color_cnt++, adj_list, color, colormap); // Recursive DFS
     }
   }
-  std::cerr << "Total Components = " << color_cnt << " ";
+  //std::cerr << "Total Components = " << color_cnt << " ";
   std::vector<int> cc(color_cnt);
   int maxv = -1, maxo = -1;
   for(int i = 0; i < N; i++)
@@ -56,7 +56,7 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
       maxo = color[i];
     }
   }
-  std::cerr << "| Nodes = " << maxv << " ";
+  //std::cerr << "| Nodes = " << maxv << " ";
   return {maxo,maxv};
 }
 
@@ -129,7 +129,7 @@ int main()
   {
     std::cout << std::get<0>(it) << " " << std::get<1>(it) << " " << std::get<2>(it) << std::endl;
   }
-  std::cerr << "| Edges = " << new_edges.size() << std::endl;
+  //std::cerr << "| Edges = " << new_edges.size() << std::endl;
 
   n = new_n;
   double z = 0;

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['identity_0',['identity',['../NaivePLW_8cpp.html#a4fd452a08721b76b9e9dbfe38baef5ba',1,'NaivePLW.cpp']]]
+  ['j_0',['j',['../NaivePLW_8cpp.html#a8b745d81e278e5fdc15b4d7ab12d7536',1,'NaivePLW.cpp']]]
 ];

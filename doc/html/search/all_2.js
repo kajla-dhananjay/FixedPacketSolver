@@ -1,9 +1,8 @@
 var searchData=
 [
-  ['canproceed_0',['canProceed',['../classChannel.html#ace0de4fd79814e294a7a884169c0717f',1,'Channel']]],
-  ['canstop_1',['canStop',['../classChannel.html#a69915b4871bfa7d30df8276559180dff',1,'Channel']]],
-  ['channel_2',['Channel',['../classChannel.html',1,'Channel'],['../classChannel.html#af2b4b16288cbb2c592b1e0f6486c2430',1,'Channel::Channel()']]],
-  ['checkconnected_3',['checkConnected',['../NaivePLW_8cpp.html#acdc38e4fc89d43ac4f7caaef3be1a2dd',1,'NaivePLW.cpp']]],
-  ['cum_5fp_4',['Cum_P',['../NaivePLW_8cpp.html#a5c394c6f83a056eebbed780a88d8cd18',1,'NaivePLW.cpp']]],
-  ['cumdist_5',['cumDist',['../NaivePLW_8cpp.html#af642ac8547a415ef90fcb65972330277',1,'NaivePLW.cpp']]]
+  ['d_0',['D',['../NaivePLW_8cpp.html#a07af738d5c9a8eb62002dfe39272310c',1,'NaivePLW.cpp']]],
+  ['d_1',['d',['../NaivePLW_8cpp.html#a6f364afbe132c4ecfea48bde1b0618ba',1,'NaivePLW.cpp']]],
+  ['dfs_2',['DFS',['../NaivePLW_8cpp.html#a4419e56550090ab681895999bde12072',1,'NaivePLW.cpp']]],
+  ['directory_20structure_3',['Directory Structure',['../md_src_naive_README.html',1,'']]],
+  ['distselector_4',['distSelector',['../NaivePLW_8cpp.html#ad9687661ae821194e0fd9d9ed26a20d6',1,'NaivePLW.cpp']]]
 ];

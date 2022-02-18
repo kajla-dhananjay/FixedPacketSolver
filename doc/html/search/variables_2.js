@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['cum_5fp_0',['Cum_P',['../NaivePLW_8cpp.html#a5c394c6f83a056eebbed780a88d8cd18',1,'NaivePLW.cpp']]]
+  ['d_0',['D',['../NaivePLW_8cpp.html#a07af738d5c9a8eb62002dfe39272310c',1,'NaivePLW.cpp']]],
+  ['d_1',['d',['../NaivePLW_8cpp.html#a6f364afbe132c4ecfea48bde1b0618ba',1,'NaivePLW.cpp']]]
 ];

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['process_0',['process',['../classChannel.html#a18333416a2fc630a7c805d1c1ac7c178',1,'Channel']]],
-  ['pushupdate_1',['pushUpdate',['../classChannel.html#ac5ca6bacab4169ab1fef4f0dc2ab1205',1,'Channel']]]
+  ['process_0',['process',['../classchannel.html#a0e0745c66e353e64bf5a18db56113761',1,'channel']]],
+  ['pushupdate_1',['pushUpdate',['../classchannel.html#aef415d9049f2d7142ba874fed2534f92',1,'channel']]]
 ];

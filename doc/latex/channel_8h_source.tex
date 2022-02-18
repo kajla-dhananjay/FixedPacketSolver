@@ -1,0 +1,36 @@
+\hypertarget{channel_8h_source}{}\doxysection{channel.\+h}
+\label{channel_8h_source}\index{src/naive/channel.h@{src/naive/channel.h}}
+\mbox{\hyperlink{channel_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{1 }
+\DoxyCodeLine{12 \textcolor{preprocessor}{\#include<bits/stdc++.h>}}
+\DoxyCodeLine{13 \textcolor{preprocessor}{\#include "{}\mbox{\hyperlink{indexedSet_8h}{indexedSet.h}}"{}}}
+\DoxyCodeLine{14 }
+\DoxyCodeLine{15 \textcolor{keyword}{class }\mbox{\hyperlink{classchannel}{channel}}}
+\DoxyCodeLine{16 \{}
+\DoxyCodeLine{17 \textcolor{keyword}{private}:}
+\DoxyCodeLine{18   \textcolor{keywordtype}{int} T; \textcolor{comment}{// Global clock}}
+\DoxyCodeLine{19   \textcolor{keywordtype}{int} batch\_size; \textcolor{comment}{// Size of batches to process}}
+\DoxyCodeLine{20   \textcolor{keywordtype}{double} eps; \textcolor{comment}{// Error Margin}}
+\DoxyCodeLine{21   std::vector<int> Q; \textcolor{comment}{// Vertex occupancy at given instant}}
+\DoxyCodeLine{22   std::vector<double> mu; \textcolor{comment}{// Average vertex occupancy}}
+\DoxyCodeLine{23   \mbox{\hyperlink{classindexedSet}{indexedSet<double>}}* tm; \textcolor{comment}{// Indexed priority queue to keep track of the bottleneck vertex}}
+\DoxyCodeLine{24   std::queue<std::pair<int, int> > R; \textcolor{comment}{// Queue containing updates waiting to be processed}}
+\DoxyCodeLine{25   std::vector<std::queue<std::tuple<int, int, int, int> > > S; \textcolor{comment}{// Data structure to keep track of updates}}
+\DoxyCodeLine{26   std::vector<int> L; \textcolor{comment}{// Indicates when was the last time a given vertex was updated}}
+\DoxyCodeLine{27   \textcolor{keywordtype}{bool} isDone; \textcolor{comment}{// Indicator to check if all the processing is complete}}
+\DoxyCodeLine{28   std::mutex m; \textcolor{comment}{// Mutex lock for thread safety}}
+\DoxyCodeLine{29   std::unordered\_set<int> valid\_chains; \textcolor{comment}{// Keeps the list of valid chains}}
+\DoxyCodeLine{30   std::unordered\_set<int> v\_chains;  \textcolor{comment}{// Keeps the list of all the chains, valid\_chains restores to this once completely depleted}}
+\DoxyCodeLine{31   std::vector<int> chain\_positions; \textcolor{comment}{// A testing metric in order to ensure the order of chain updates is accurate}}
+\DoxyCodeLine{32 \textcolor{keyword}{public}:}
+\DoxyCodeLine{33   \mbox{\hyperlink{classchannel_ada2d87a18f6b93fd9940f9242b225a04}{channel}}();}
+\DoxyCodeLine{34   \mbox{\hyperlink{classchannel_ada2d87a18f6b93fd9940f9242b225a04}{channel}}(\textcolor{keywordtype}{int} \mbox{\hyperlink{NaivePLW_8cpp_a76f11d9a0a47b94f72c2d0e77fb32240}{n}}, \textcolor{keywordtype}{int} \mbox{\hyperlink{NaivePLW_8cpp_a339d22b3e442946380f98ed19e320db2}{s}}, \textcolor{keywordtype}{int} \mbox{\hyperlink{NaivePLW_8cpp_a6f364afbe132c4ecfea48bde1b0618ba}{d}}, \textcolor{keywordtype}{double} e);}
+\DoxyCodeLine{35   \textcolor{keywordtype}{int} \mbox{\hyperlink{classchannel_a7d25e35676f4bd28bb504cace6931e13}{getChain}}();}
+\DoxyCodeLine{36   \textcolor{keywordtype}{bool} \mbox{\hyperlink{classchannel_a91f99424dc3801534ff98e75c3ca6773}{canStop}}();}
+\DoxyCodeLine{37   \textcolor{keywordtype}{void} \mbox{\hyperlink{classchannel_aef415d9049f2d7142ba874fed2534f92}{pushUpdate}}(\textcolor{keywordtype}{int} chain, std::pair<int, int> p);}
+\DoxyCodeLine{38   std::vector<double> \mbox{\hyperlink{classchannel_a7ce043d250a55249836f68256de1133f}{getMu}}();}
+\DoxyCodeLine{39   \textcolor{keywordtype}{void} \mbox{\hyperlink{classchannel_a0e0745c66e353e64bf5a18db56113761}{process}}();}
+\DoxyCodeLine{40 \};}
+
+\end{DoxyCode}
