@@ -4,6 +4,6 @@
 #include "channel.h"
 
 void *runChainParallelInstance(void *ptr); 
-channel *runChain(int n, int s, int d, int eps, std::vector<std::vector<std::pair<double, int> > > &CP);
+channel *runChain(int n, int s, int d, double eps, std::vector<std::vector<std::pair<double, int> > > &CP);
 
 #endif 

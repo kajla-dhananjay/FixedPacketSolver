@@ -260,15 +260,9 @@ int main()
 
   srand(time(0));
 
-  std::cerr << "Before Init" << std::endl;
-
   init();
 
-  std::cerr << "Before Chain" << std::endl;
-
   chan = runChain(n, s, d, eps, Cum_P);
-
-  std::cerr << "Before End" << std::endl;
 
   end();
 

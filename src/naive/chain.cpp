@@ -10,11 +10,13 @@
  * @return void* Exit value of thread(NULL)
  */
 
-int nn, ss, dd, ee;
+int nn, ss, dd;
+double ee;
 std::vector<int> xx;
 std::vector<std::mutex> X_lock;
 std::vector<std::vector<std::pair<double, int> > > cp;
 channel *ch;
+std::mutex io_lock;
 
 
 template<typename T>
@@ -75,10 +77,17 @@ void *runChainParallelInstance(void *ptr)
   {
     int i1 = ch->getChain();
 
-    if(i1 >= dd || i1 < 0)
+    if((i1 >= dd || i1 < 0) && i1 != -1 )
     {
-      errorHandler("Bad chain allocation");
+      std::cerr << "Bad chain allocation " + std::to_string(i1) << std::endl;
+      errorHandler("Bad chain allocation " + std::to_string(i1));
     }
+    
+    //io_lock.lock();
+
+    //std::cerr << "Thread accquired chain: " << i1 << std::endl;
+
+    //io_lock.unlock();
 
     if(i1 != -1) // If queue allows us to make a transition, we go ahead
     {
@@ -108,7 +117,7 @@ void *runChainParallelInstance(void *ptr)
  * @brief runs the chain 
  */
 
-channel* runChain(int n, int s, int d, int eps, std::vector<std::vector<std::pair<double, int> > > &CP)
+channel* runChain(int n, int s, int d, double eps, std::vector<std::vector<std::pair<double, int> > > &CP)
 {
   /***************************** Initialization *******************************/
   nn = n;
@@ -122,11 +131,13 @@ channel* runChain(int n, int s, int d, int eps, std::vector<std::vector<std::pai
   std::vector<std::mutex> tmp(d);
   X_lock.swap(tmp);
 
+  // std::cerr << n << ' ' << eps << std::endl;
+
   ch = new channel(nn, ss, dd, ee, xx);
   std::vector<std::mutex> mm(d);
   X_lock.swap(mm);
 
-  std::cerr << "Before Chain Running" << std::endl;
+  // std::cerr << "Before Chain Running" << std::endl;
 
   std::vector<pthread_t> threads(d);
   for(int i = 0; i < d; i++)

@@ -146,9 +146,9 @@ std::vector<double> channel::getMu()
  */
 void channel::process()
 {
+    // std::cerr << "Process started" << std::endl;
     if(isDone)
         return; // Nothing to do
-    //std::cout << "Process started" << std::endl;
     std::set<int> updatedVertices;
     while(!R.empty()) // Updates all transitions
     { 
@@ -168,17 +168,23 @@ void channel::process()
         updatedVertices.insert(p.first);
         updatedVertices.insert(p.second);
     }
+    // std::cerr << "Process here" << std::endl;
     for(auto w : updatedVertices)
     {
+        // std::cerr << w << " " << S[w].size() << " " << eps << std::endl;
         while(!S[w].empty())
         {
             auto s = S[w].front(); // Current update to be processed
             S[w].pop();
 
+            // std::cerr << "Checkpoint A" << std::endl;
+
             int nq = std::get<0>(s); // New occupancy at w
             int oq = std::get<1>(s); // Old occupancy at w
             int nt = std::get<2>(s); // Time at which occupancy changed
             int ot = std::get<3>(s); // Last seen time before the change in occupancy
+
+            // std::cerr << "Checkpoint B" << std::endl;
 
             double z = mu[w] * ot + oq * (nt - ot - 1) + nq;
             z /= nt;
@@ -190,33 +196,21 @@ void channel::process()
             temp += 1;
             temp /= 2;
 
+            // std::cerr << "Checkpoint C" << std::endl;
+
+            //std::cerr << w << ' ' << temp << std::endl;
+
             tm->setVal(w, temp); // Updates the countdown timer in the indexed set
-            //std::cout << "YO" << std::endl;
-            //std::cout << "Time: " << nt << " Vertex: " << w << " with nq: " << nq << " oq: " << oq << " nt: " << nt << " ot: " << ot << " mu: " << z << " temp: " << temp << " Timer: " << tm->getMax() << std::endl;  
+
+            // std::cerr << "Checkpoint D" << std::endl;
         }
+        // std::cerr << "Process there" << std::endl;
     }
-    /*
-    std::cout << "*****OCCUPANCY REPORT*******" << std::endl;
-    for(int i = 0; i < (int)Q.size(); i++)
-    {
-        std::cout << "Vertex: " << i << ", occupancy: " << Q[i] << std::endl;
-    }
-    std::cout << "*****AVERAGE OCCUPANCY REPORT*******" << std::endl;
-    for(int i = 0; i < (int)Q.size(); i++)
-    {
-        std::cout << "Vertex: " << i << ", average occupancy: " << mu[i] << std::endl;
-    }
-    std::cout << "*****TIMER REPORT*******" << std::endl;
-    for(int i = 0; i < (int)Q.size(); i++)
-    {
-        std::cout << "Vertex: " << i << ", timer: " << tm->getVal(i) << std::endl;
-    }
-    */
-    // std::cout << "TM: " << tm->getMax() << ", T: " << T << std::endl;
     if(tm->getMax() <= T) // If the maximum time for any vertex to stabilize in occupancy is less than current time, we stop
     {
         isDone = true;
     }
+    // std::cerr << "Process ended" << std::endl;
 }
 
 /**
