@@ -1,4 +1,4 @@
-all: NaivePLW
+all: formatter NaivePLW
 
 
 chain: chain.cpp
