@@ -11,6 +11,7 @@
 void end()
 {
   std::vector<double> x = chan->getMu();
+  iterations = chan->getT();
   double z = x[u];
   x[u] = 0;
   double z_star = 0;
@@ -30,8 +31,8 @@ void end()
   //outcontainer(Lx);
   std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(b, -1.0));
   //outcontainer(Lx_b);
-  //outcontainer(Lx_b);
-  std::cout << "L1 norm: how to change " << l1_norm(Lx_b) << std::endl;
+  std::cout << "Total Iterations: " << iterations << std::endl;
+  std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
   std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
   std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
   std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(b) << std::endl; 

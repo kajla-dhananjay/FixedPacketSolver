@@ -32,6 +32,8 @@ channel::channel(int n, int s, int d, double e)
 {
     T = 0; // Initialize global clock to 0
     eps = e; // Initialize error margin
+    dd = d;
+    D = d;
     Q.resize(n,0); // Initially all queues empty
     S.resize(n); // Initialize update tracking for each vertex
     L.resize(n,0); // Initialize last seen for each vertex
@@ -40,10 +42,6 @@ channel::channel(int n, int s, int d, double e)
     tm = new indexedSet<double>(n); // Initialize the indexed set
     tm->setVal(s, INT_MAX); // Initialize timer at bootstraped vertex to infinity
     isDone = false; // Initialize isdone to false
-    for(int i = 0; i < d; i++)
-    {
-        v_chains.insert(i);
-    }
     batch_size = 4;
 }
 
@@ -55,25 +53,23 @@ channel::channel(int n, int s, int d, double e)
  * @param X_P Initial position of chains
 */
 
-channel::channel(int n, int s, int d, double e, std::vector<int> X_P)
+channel::channel(int n, int s, int d, double e, std::vector<int> x)
 {
     T = 0; // Initialize global clock to 0
     eps = e; // Initialize error margin
+    dd = d;
+    D = d-1;
     Q.resize(n,0); // Initially all queues empty
     S.resize(n); // Initialize update tracking for each vertex
     L.resize(n,0); // Initialize last seen for each vertex
     mu.resize(n, 0); // Initialize average occupancy at each vertex
     tm = new indexedSet<double>(n); // Initialize the indexed set
-    for(int i = 0; i < (int)X_P.size(); i++)
+    for(int i = 0; i < (int)x.size(); i++)
     {
-        Q[X_P[i]]++; // Increase occupancy at occupied vertices
-        tm->setVal(X_P[i], INT_MAX); // Set timer of occupied vertices to infinity
+        Q[x[i]]++; // Increase occupancy at occupied vertices
+        tm->setVal(x[i], INT_MAX); // Set timer of occupied vertices to infinity
     }
     isDone = false; // Initialize isdone to false
-    for(int i = 0; i < d; i++)
-    {
-        v_chains.insert(i);
-    }
     batch_size = 4;
 }
 
@@ -87,18 +83,17 @@ channel::channel(int n, int s, int d, double e, std::vector<int> X_P)
 int channel::getChain()
 {
     m.lock();
-    if(R.size() >= v_chains.size() * batch_size)
+    if(R.size() >= dd * batch_size)
     {
         //std::cout << "Calling process at queue size: " << R.size() << std::endl;
         process();
         //std::cout << "Queue size after process: " << R.size() << std::endl;
     }
-    if(valid_chains.empty())
+    if(D==0)
     {
-        valid_chains = v_chains; // Restore such that all chains are now valid
+        D = dd-1; // Restore such that all chains are now valid
     }
-    int x = *(valid_chains.begin());
-    valid_chains.erase(valid_chains.begin());
+    int x = D--;
     m.unlock();
     if(isDone)
     {
@@ -222,4 +217,14 @@ void channel::process()
     {
         isDone = true;
     }
+}
+
+/**
+ * @brief returns the total time
+ * 
+ * @return T The total time
+ */
+int channel::getT()
+{
+    return T;
 }

@@ -23,7 +23,6 @@ void init()
   #endif
 
   D.resize(n); // Initialize Total node weight tracker
-  std::mutex tmp;
   std::vector<std::mutex> mm(n);
   sourceLock.swap(mm); // Lock sources
 

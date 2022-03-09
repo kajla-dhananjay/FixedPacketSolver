@@ -17,6 +17,8 @@ class channel
 private:
   int T; // Global clock
   int batch_size; // Size of batches to process
+  int dd;
+  int D;
   double eps; // Error Margin
   std::vector<int> Q; // Vertex occupancy at given instant
   std::vector<double> mu; // Average vertex occupancy
@@ -26,14 +28,13 @@ private:
   std::vector<int> L; // Indicates when was the last time a given vertex was updated
   bool isDone; // Indicator to check if all the processing is complete
   std::mutex m; // Mutex lock for thread safety
-  std::unordered_set<int> valid_chains; // Keeps the list of valid chains
-  std::unordered_set<int> v_chains;  // Keeps the list of all the chains, valid_chains restores to this once completely depleted
   std::vector<int> chain_positions; // A testing metric in order to ensure the order of chain updates is accurate
 public:
   channel();
   channel(int n, int s, int d, double e);
-  channel(int n, int s, int d, double e, std::vector<int> X_P);
+  channel(int n, int s, int d, double e, std::vector<int> x);
   int getChain();
+  int getT();
   bool canStop();
   void pushUpdate(int chain, std::pair<int, int> p);
   std::vector<double> getMu();
