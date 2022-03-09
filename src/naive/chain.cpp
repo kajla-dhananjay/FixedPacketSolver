@@ -82,12 +82,6 @@ void *runChainParallelInstance(void *ptr)
       std::cerr << "Bad chain allocation " + std::to_string(i1) << std::endl;
       errorHandler("Bad chain allocation " + std::to_string(i1));
     }
-    
-    //io_lock.lock();
-
-    //std::cerr << "Thread accquired chain: " << i1 << std::endl;
-
-    //io_lock.unlock();
 
     if(i1 != -1) // If queue allows us to make a transition, we go ahead
     {
