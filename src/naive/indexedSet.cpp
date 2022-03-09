@@ -115,3 +115,28 @@ void indexedSet<T>::setVal(int index, T value)
     set_val.insert(array_val[index]);
 }
 
+/**
+ * @brief Gets the first index containing the maximum value
+ * 
+ * @return The first index containing the maximum value in the set
+ */
+
+template<typename T>
+int indexedSet<T>::getMaxIndex()
+{
+    if(array_val.empty())
+    {
+        errorHandler err("No max index in empty indexedSet");
+    }
+    T maxv = array_val[0];
+    int maxi = 0;
+    for(int i = 0; i < (int)array_val.size(); i++)
+    {
+        if(array_val[i] < maxv)
+        {
+            maxv = array_val[i];
+            maxi = i;
+        }
+    }
+    return maxi;
+}

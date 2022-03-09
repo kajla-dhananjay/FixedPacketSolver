@@ -32,6 +32,7 @@ private:
 public:
   channel();
   channel(int n, int s, int d, double e);
+  channel(int n, int s, int d, double e, std::vector<int> X_P);
   int getChain();
   bool canStop();
   void pushUpdate(int chain, std::pair<int, int> p);

@@ -36,10 +36,39 @@ channel::channel(int n, int s, int d, double e)
     S.resize(n); // Initialize update tracking for each vertex
     L.resize(n,0); // Initialize last seen for each vertex
     mu.resize(n, 0); // Initialize average occupancy at each vertex
-    chain_positions.resize(d, s);
     Q[s] = d; // Place all d packets at s
     tm = new indexedSet<double>(n); // Initialize the indexed set
     tm->setVal(s, INT_MAX); // Initialize timer at bootstraped vertex to infinity
+    isDone = false; // Initialize isdone to false
+    for(int i = 0; i < d; i++)
+    {
+        v_chains.insert(i);
+    }
+    batch_size = 4;
+}
+
+/**
+ * @brief Creates a new channel object for given number of nodes, given start node, given number of chains
+ * @param n Number of nodes
+ * @param s Bootstrapped vertex
+ * @param d Number of chains
+ * @param X_P Initial position of chains
+*/
+
+channel::channel(int n, int s, int d, double e, std::vector<int> X_P)
+{
+    T = 0; // Initialize global clock to 0
+    eps = e; // Initialize error margin
+    Q.resize(n,0); // Initially all queues empty
+    S.resize(n); // Initialize update tracking for each vertex
+    L.resize(n,0); // Initialize last seen for each vertex
+    mu.resize(n, 0); // Initialize average occupancy at each vertex
+    tm = new indexedSet<double>(n); // Initialize the indexed set
+    for(int i = 0; i < (int)X_P.size(); i++)
+    {
+        Q[X_P[i]]++; // Increase occupancy at occupied vertices
+        tm->setVal(X_P[i], INT_MAX); // Set timer of occupied vertices to infinity
+    }
     isDone = false; // Initialize isdone to false
     for(int i = 0; i < d; i++)
     {
@@ -99,11 +128,6 @@ bool channel::canStop()
 void channel::pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
 {
     m.lock();
-    if(chain_positions[chain] != p.first)
-    {
-        errorHandler err("Bad chain transition");
-    }
-    chain_positions[chain] = p.second;
     R.push(p); // Push transition in the queue
     m.unlock();
 }

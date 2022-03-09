@@ -24,6 +24,7 @@ public:
   T getMax(); // Returns the maximum value present in the IS
   T getVal(int index); // Returns the value at the given index
   void setVal(int index, T value); // Updates the given index to the given value
+  int getMaxIndex(); // Returns the index containing the maximum value
 };
 
 #endif
