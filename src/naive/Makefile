@@ -1,4 +1,4 @@
-all: chain channel checkers distSelector end errorHandler formatter indexedSet initialization linalg NaivePLW
+all: NaivePLW
 
 
 chain: chain.cpp
@@ -10,12 +10,6 @@ channel: channel.cpp
 checkers: checkers.cpp
 	g++ -Wall -c checkers.cpp -o checkers.o
 
-distSelector: distSelector.cpp
-	g++ -Wall -c distSelector.cpp -o distSelector.o
-
-end: end.cpp
-	g++ -Wall -c end.cpp -o end.o
-
 errorHandler: errorHandler.cpp
 	g++ -Wall -c errorHandler.cpp -o errorHandler.o
 
@@ -25,14 +19,11 @@ formatter: formatter.cpp
 indexedSet: indexedSet.cpp 
 	g++ -Wall -c indexedSet.cpp -o indexedSet.o
 
-initialization: initialization.cpp 
-	g++ -Wall -c initialization.cpp -o initialization.o 
-
 linalg: linalg.cpp 
 	g++ -Wall -c linalg.cpp -o linalg.o
 
-NaivePLW: NaivePLW.cpp chain channel checkers distSelector end errorHandler indexedSet initialization linalg
-	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o distSelector.o end.o errorHandler.o indexedSet.o initialization.o linalg.o -pthread
+NaivePLW: NaivePLW.cpp chain channel checkers errorHandler indexedSet linalg
+	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o errorHandler.o indexedSet.o linalg.o -pthread
 
 clean:
 	rm -rf formatter NaivePLW *.txt *.o

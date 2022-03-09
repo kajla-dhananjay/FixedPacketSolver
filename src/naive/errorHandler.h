@@ -1,3 +1,5 @@
+#ifndef __ERROR_HANDLER_H_
+#define __ERROR_HANDLER_H_
 /**
  * @file errorHandler.h
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
@@ -9,8 +11,6 @@
  * 
  */
 
-#ifndef __ERROR_HANDLER_H_
-#define __ERROR_HANDLER_H_
 #include<bits/stdc++.h>
 
 class errorHandler{

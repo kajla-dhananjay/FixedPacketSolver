@@ -1,5 +1,7 @@
 #ifndef _LINALG_H
 #define _LINALG_H
+#include <bits/stdc++.h>
+#include "errorHandler.h"
 
 template<typename T> std::vector<T> matrix_vector_mult(std::vector<std::vector<T> > mat, std::vector<T> v);
 template<typename T> std::vector<T> vector_scalar_mult(std::vector<T> v, T val);

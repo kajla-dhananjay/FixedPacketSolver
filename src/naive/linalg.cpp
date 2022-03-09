@@ -1,7 +1,6 @@
 #include<bits/stdc++.h>
 #include "linalg.h"
 
-
 template<typename T>
 std::vector<T> matrix_vector_mult(std::vector<std::vector<T> > mat, std::vector<T> v)
 {

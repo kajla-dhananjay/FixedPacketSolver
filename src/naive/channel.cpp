@@ -83,7 +83,7 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x)
 int channel::getChain()
 {
     m.lock();
-    if(R.size() >= dd * batch_size)
+    if((int)R.size() >= dd * batch_size)
     {
         //std::cout << "Calling process at queue size: " << R.size() << std::endl;
         process();

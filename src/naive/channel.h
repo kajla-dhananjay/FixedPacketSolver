@@ -1,3 +1,5 @@
+#ifndef _CHANNEL_H_
+#define _CHANNEL_H_
 /**
  * @file channel.h
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
@@ -40,3 +42,4 @@ public:
   std::vector<double> getMu();
   void process();
 };
+#endif

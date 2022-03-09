@@ -1,3 +1,6 @@
+#ifndef __INDEXED_SET_H_
+#define __INDEXED_SET_H_
+
 /**
  * @file indexedSet.h
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
@@ -9,8 +12,6 @@
  * 
  */
 
-#ifndef __INDEXED_SET_H_
-#define __INDEXED_SET_H_
 
 template<typename T>
 class indexedSet{
