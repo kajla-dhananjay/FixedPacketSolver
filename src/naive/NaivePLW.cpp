@@ -13,7 +13,7 @@
 
 #include<bits/stdc++.h>
 
-// Compilation Flag Macros : TIMER, DEBUG, PARALLEL, STEPBYSTEP
+// Compilation Flag Macros : DEBUG
 
 /************************* Custom libraries Import **************************/
 
@@ -26,14 +26,6 @@
 #include "linalg.h"
 #include "serialChain.h"
 
-
-/************************* Program Wide Macros ********************************/
-
-//#define TIMER
-//#define DEBUG
-//#define PARALLEL
-//#define STEPBYSTEP
-
 /************************* Global Declarations ********************************/
 
 int n; ///< Number of Nodes in Graph
@@ -42,11 +34,8 @@ int s = 0; ///< Vertex chosen via bootstrapping indicating high stationary prob.
 
 
 int u = -1; ///< The index of the sink vertex
-int timer = 0; ///< Timer for running the chain serially
-int N_mult = 64; //< Multiplier for number of bootstrapping runs to have
-int N = -1; ///< Number of samples for bootstrapping
 int d = 5; ///< Stores the nunber of chains to run
-int iterations = 0;
+int iterations = 0; ///< Stores the number of chain iterations
 
 double sb; ///< Stores the sum of non-sink column vectors
 double eps = 1; ///< Stores the bound on error required
@@ -167,9 +156,9 @@ void init()
 
   for(int i = 0; i < n; i++)
   {
-    if(b[i] <= 0) // Sink vertex
+    if(b[i] <= 0) // non_source vertex
     {
-      j[i] = 0; // j_sink = 0 by definition
+      j[i] = 0; // j = 0 by definition
     }
     else
     {
@@ -178,8 +167,6 @@ void init()
       sources.push_back(std::make_pair(d1, i)); // Making cumulative probability distribution
     }
   }
-
-  d1 = 0; // Culumative j
 
   #ifdef DEBUG
   P[u] = j;
@@ -261,6 +248,8 @@ int main()
   srand(time(0));
 
   init();
+
+  s = n-1;
 
   chan = runChain(n, s, d, eps, Cum_P);
 

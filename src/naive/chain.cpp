@@ -128,8 +128,6 @@ channel* runChain(int n, int s, int d, double eps, std::vector<std::vector<std::
   // std::cerr << n << ' ' << eps << std::endl;
 
   ch = new channel(nn, ss, dd, ee, xx);
-  std::vector<std::mutex> mm(d);
-  X_lock.swap(mm);
 
   // std::cerr << "Before Chain Running" << std::endl;
 
