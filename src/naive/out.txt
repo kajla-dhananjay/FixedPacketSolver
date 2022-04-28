@@ -1,1 +1,195 @@
-Total Iterations: 81
+Process Queue Started
+Process Size: Started
+Process Size: 5
+Process Size: 4
+Process Size: 4
+Process Queue Started
+Process Size: 4
+arted
+Process Size: 4
+Process Size: 3
+Process Size: 3
+Process Queue Started
+Process Size: 3
+arted
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: Started
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: Started
+Process Size: 1
+Process Size: 0
+Process Size: 0
+Process Queue Started
+All elements processedAll elements processed
+Time : Time : 2
+Process Queue Started
+Process Queue Empty
+d
+Process Queue Empty
+Process Queue Started
+Process Queue Empty
+d
+Process Queue Empty
+Process Queue Started
+Process Queue Empty
+d
+Process Queue Empty
+Process Queue Started
+Process Queue Empty
+d
+Process Queue Empty
+Process Queue Started
+Process Size: Started
+Process Size: 5
+Process Size: 4Process Size: 4
+Process Queue Started
+Process Size: 4
+Process Size: 3
+Process Size: 3
+Process Queue Started
+Process Size: Started
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: 2
+arted
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: Started
+Process Size: 1
+Process Size: 0
+Process Size: 0
+Process Queue Started
+Process Queue Started
+All elements processed
+Time : 3
+Time : 3
+Process Queue Started
+Process Size: 5
+Process Size: Process Size: 4
+Process Queue Started
+Process Size: Started
+Process Size: 4
+Process Size: 3
+Process Size: 3
+Process Queue Started
+Process Size: 3
+arted
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: Started
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: 1
+arted
+Process Size: 1
+Process Size: 0
+Process Queue Started
+All elements processedAll elements processed
+Time : 4
+Time : 4
+Process Queue Started
+Process Size: 5
+arted
+Process Size: 5
+Process Size: 4
+Process Size: 4
+Process Queue Started
+Process Queue Started
+Process Size: 4
+Process Size: Process Size: 3
+Process Queue Started
+Process Size: 3
+arted
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: 2
+arted
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: 1
+Process Size: 0
+Process Queue Started
+All elements processed
+Time : Time : 5
+Process Queue Started
+Process Size: 4
+arted
+Process Size: 4
+Process Size: Process Size: 3
+Process Queue Started
+Process Size: Started
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: 2
+arted
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: Started
+Process Size: 1
+Process Size: 0
+Process Size: 0
+Process Queue Started
+All elements processedAll elements processed
+Time : 6
+Time : 6
+Process Queue Started
+Process Size: 5
+arted
+Process Size: 5
+Process Size: 4
+Process Size: 4
+Process Queue Started
+Process Size: 4
+arted
+Process Size: 4
+Process Size: 3
+Process Size: 3
+Process Queue Started
+Process Size: Started
+Process Size: 3
+Process Size: 2
+Process Size: 2
+Process Queue Started
+Process Size: 2
+arted
+Process Size: 2
+Process Size: 1
+Process Size: 1
+Process Queue Started
+Process Size: 1
+arted
+Process Size: 1
+Process Size: Process Size: 0
+Process Queue Started
+All elements processedAll elements processed
+Time : 7
+Time : 7
+Total Iterations: 7
+Final Result: 
+0.199138
+-0.21349
+-0.114818
+-0.0251165
+0.154287

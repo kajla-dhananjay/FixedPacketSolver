@@ -20,164 +20,80 @@
 #include "chain.h"
 #include "channel.h"
 #include "checkers.h"
+#include "data.h"
 #include "errorHandler.h"
 #include "indexedSet.h"
-#include "initialization.h"
 #include "linalg.h"
-#include "serialChain.h"
 
 /************************* Global Declarations ********************************/
-
-int n; ///< Number of Nodes in Graph
-int m; ///< Number of Edges in Graph
-int s = 0; ///< Vertex chosen via bootstrapping indicating high stationary prob. state
-
-
-int u = -1; ///< The index of the sink vertex
-int d = 5; ///< Stores the nunber of chains to run
-int iterations = 0; ///< Stores the number of chain iterations
-
-double sb; ///< Stores the sum of non-sink column vectors
-double eps = 1; ///< Stores the bound on error required
  
-channel *chan;
 
-std::vector<double> b; ///< Column vector b as per definition
-std::vector<double> j; ///< Column vector j as per definition
-std::vector<double> D; ///< Stores total weight sum for the vertices
-
-std::vector<std::pair<double, int> > sources; ///< Distribution of sources
-
-#ifdef DEBUG
-std::vector<std::vector<double> > P; ///< Transition Matrix
-std::vector<std::vector<double> > L; ///< Laplacian Matrix for the given graph
-#endif
-
-std::vector<std::vector<std::pair<double, int> > > Cum_P; ///< Cumulative Transition Matrix
-
-
-void init()
+graph *input_graph()
 {
-
-  int i1, i2; // Temporary Int Variables
-  double d1; // Temporary Double Variables
-
-
-  scanf("%d %d\n", &n, &m); // Input Number of nodes and Number of edges
-
-  Cum_P.resize(n); // Initialize Cumulative Transition Matrix
-
-  #ifdef DEBUG
-  P.resize(n, std::vector<double>(n,0));
-  L.resize(n, std::vector<double>(n,0));
-  #endif
-
-  D.resize(n); // Initialize Total node weight tracker
-
-
-  /*****************************Take Graph Input*******************************/
-
-  for(int i = 0; i < m; i++) // Input the edges
+  graph * g = new graph();
+  int a, b;
+  std::cin >> a >> b;
+  g->n = a;
+  g->m = b;
+  for(int i = 0; i < b; i++)
   {
-    scanf("%d %d %lf\n", &i1, &i2, &d1); // Takes in the incident vertices and their edge-weight
-    D[i1] += d1; // Add weight of given edges to total node weight
-    D[i2] += d1; // Add weight of given edges to total node weight
-    Cum_P[i1].push_back(std::make_pair(D[i1], i2)); // Add i2 to cumulative distribution of i1
-    Cum_P[i2].push_back(std::make_pair(D[i2], i1)); // Add i1 to cumulative distribution of i2
-
-    #ifdef DEBUG
-    P[i1][i2] = d1;
-    P[i2][i1] = d1;
-    L[i1][i2] = -1 * d1;
-    L[i2][i1] = -1 * d1;
-    #endif
-
+    int x, y;
+    double z;
+    std::cin >> x >> y >> z;
+    g->edges.push_back(std::make_tuple(x,y,z));
   }
+  return g;
+}
 
-  if(!checkConnected(Cum_P)) // Check if the graph is connected
+std::vector<double> *input_b()
+{
+  int n;
+  std::cin >> n;
+  std::vector<double> *b = new std::vector<double>();
+  b->resize(n);
+  for(int i = 0; i < n; i++)
   {
-    errorHandler err("Given Graph is not connected");
+    double x;
+    std::cin >> x;
+    (*b)[i] = x;
   }
+  return b;
+}
+
+double input_eps()
+{
+  double e;
+  std::cin >> e;
+  return e;
+}
+
+data *init()
+{
+  // std::cerr << "Init Started" << std::endl;
+
+  graph *g = input_graph();
+
+  // std::cerr << "Graph Input Completed" << std::endl;
+
+  std::vector<double> *b = input_b();
+
+  // std::cerr << "b Input Completed" << std::endl;
+
+  double e = input_eps();
+
+  // std::cerr << "eps Input Completed" << std::endl;
 
 
-  /*****************************Create Cumulative Transition Matrix***********/
-
-  for(int i = 0; i < n; i++) // Setting up the transition matrix for our markov chain
-  {
-    for(auto &it : Cum_P[i])
-    {
-      it.first /= D[i];
-    }
-
-    #ifdef DEBUG
-
-    for(int j = 0; j < n; j++)
-    {
-      P[i][j] = P[i][j] / D[i];
-    }
-    L[i][i] = D[i];
-
-    #endif
-  }
+  e = 1;
+  e /= ((double)g->n);
+  e /= ((double)g->n);
+  e /= ((double)g->n);
   
+  data *dat = new data(g, b, e);
 
-  /*****************************Take Column Vector Input***********************/
+  // std::cerr << "Data Generated" << std::endl;
 
-
-  scanf("%d\n", &i1); // Input the dimension of column vector, this should equal n
-
-  if(i1 != n)
-  {
-    errorHandler err("Dimension mismatch between Graph with dimension: " + std::to_string(n) + " and b vector with dimension" + std::to_string(i1));
-  }
-
-  b.resize(n); // Initialize b
-  j.resize(n); // Initialize j
-
-  for(int i = 0; i < n; i++)
-  {
-    scanf("%lf\n", &b[i]); // Taking input bi
-
-    if(b[i] < 0 && u == -1) // Finding the sink
-    {
-      u = i; // Indentified u
-    }
-    else if(b[i] < 0) // Identified Multiple sinks
-    {
-      errorHandler err("Multiple Sinks");
-    }
-    else // Possible source
-    {
-      sb += b[i]; // Sum of all b cordinates
-    }
-  }
-
-  d1 = 0; // Cumulative j
-
-  for(int i = 0; i < n; i++)
-  {
-    if(b[i] <= 0) // non_source vertex
-    {
-      j[i] = 0; // j = 0 by definition
-    }
-    else
-    {
-      j[i] = b[i]/sb; // Using definition of j
-      d1 += j[i]; // Updating cumulative value
-      sources.push_back(std::make_pair(d1, i)); // Making cumulative probability distribution
-    }
-  }
-
-  #ifdef DEBUG
-  P[u] = j;
-  #endif 
-
-  Cum_P[u] = sources; // Initializing Cum_P[u]
-
-  scanf("%lf", &eps); // Input the error parameter
-  eps = 1;
-  eps /= (double)n;
-  eps /= (double)n;
+  return dat;
 }
 
 
@@ -186,45 +102,53 @@ void init()
  * 
  */
 
-void end()
+void end(channel *chan, data *dat)
 {
   std::vector<double> x = chan->getMu();
-  iterations = chan->getT();
-  double z = x[u];
-  x[u] = 0;
+  int iterations = chan->getT();
+  double z = x[dat->u];
+  x[dat->u] = 0;
   double z_star = 0;
 
-  for(int i = 0; i < n; i++)
+  for(int i = 0; i < dat->n; i++)
   {
-    x[i] /= (z * D[i]);
+    x[i] /= (z * dat->D[i]);
     z_star += x[i];
   }
-  z_star /= n;
+  z_star /= dat->n;
 
-  for(int i = 0; i < n; i++)
+  for(int i = 0; i < dat->n; i++)
   {
     x[i] -= z_star;
-    x[i] *= sb;
+    x[i] *= dat->sb;
   }
   
   std::cout << "Total Iterations: " << iterations << std::endl;
 
-  #ifdef DEBUG
+  std::cout << "Final Result: " << std::endl;
 
-  std::vector<double> Lx = matrix_vector_mult(L, x);
-  std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(b, -1.0));
-  std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
-  std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
-  std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
-  std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(b) << std::endl; 
-  std::cout << "L1 norm(normalized to n): " << l1_norm(Lx_b) / n << std::endl; 
-  std::cout << "L2 norm(normalized to b): " << l2_norm(Lx_b) / l2_norm(b) << std::endl;
-  std::cout << "L2 norm(normalized to n): " << l2_norm(Lx_b) / n << std::endl;
-  std::cout << "Infinity norm(normalized to b): " << inf_norm(Lx_b) / inf_norm(b) << std::endl;
-  std::cout << "Infinity norm(normalized to n): " << inf_norm(Lx_b) / n << std::endl;
-  std::cout << "Averaged L1 norm (L1 norm divided by n): " << l1_norm(Lx_b) / n  << std::endl; 
-  std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (n * l1_norm(b)) << std::endl; 
-  #endif
+  for(auto it : x)
+  {
+    std::cout << it << std::endl;
+  }
+
+
+  // #ifdef DEBUG
+
+  // std::vector<double> Lx = matrix_vector_mult(L, x);
+  // std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(b, -1.0));
+  // std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
+  // std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
+  // std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
+  // std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(b) << std::endl; 
+  // std::cout << "L1 norm(normalized to n): " << l1_norm(Lx_b) / n << std::endl; 
+  // std::cout << "L2 norm(normalized to b): " << l2_norm(Lx_b) / l2_norm(b) << std::endl;
+  // std::cout << "L2 norm(normalized to n): " << l2_norm(Lx_b) / n << std::endl;
+  // std::cout << "Infinity norm(normalized to b): " << inf_norm(Lx_b) / inf_norm(b) << std::endl;
+  // std::cout << "Infinity norm(normalized to n): " << inf_norm(Lx_b) / n << std::endl;
+  // std::cout << "Averaged L1 norm (L1 norm divided by n): " << l1_norm(Lx_b) / n  << std::endl; 
+  // std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (n * l1_norm(b)) << std::endl; 
+  // #endif
 
 }
 
@@ -247,12 +171,18 @@ int main()
 
   srand(time(0));
 
-  init();
+  std::cerr << "Start" << std::endl;
 
-  s = n-1;
+  data *dat = init();
 
-  chan = runChain(n, s, d, eps, Cum_P);
+  std::cerr << "Init Done" << std::endl;
 
-  end();
+  channel *chan = runChain(dat);
+
+  std::cerr << "runChain Done" << std::endl;
+
+  end(chan, dat);
+
+  std::cerr << "Init Done" << std::endl;
 
 }

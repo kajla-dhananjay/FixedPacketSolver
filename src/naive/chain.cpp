@@ -2,6 +2,7 @@
 #include "chain.h"
 #include "channel.h"
 #include "errorHandler.h"
+#include "distSelector.h"
 
 /**
  * @brief Runs an instance of the markov chain
@@ -10,98 +11,63 @@
  * @return void* Exit value of thread(NULL)
  */
 
-int nn, ss, dd;
-double ee;
-std::vector<int> xx;
-std::vector<std::mutex> X_lock;
-std::vector<std::vector<std::pair<double, int> > > cp;
-channel *ch;
-std::mutex io_lock;
-
-
-template<typename T>
-T distSelector(const std::vector<std::pair<double, T> > &dist)
-{
-  int i1 = dist.size();
-
-  double d1 = rand(); // d1 represents the chosen random value
-  d1 /= RAND_MAX; 
-
-  if(d1 <= dist[0].first) // first entry is the selected entry
-  {
-    return dist[0].second;
-  }
-
-  int low = 0, high = i1-1, mid = 0; // Temp variables for binary search
-
-  while(true) // Binary search for the interval of distribution in which d1 falls
-  {
-    mid = (low + high)/2;
-
-    if(high == low - 1)
-    {
-      if(dist[low].first <= d1 && dist[high].first >= d1)
-      {
-        mid = low;
-      }
-      else
-      {
-        mid = high;
-      }
-      break;
-    }
-
-    if(dist[mid+1].first < d1)
-    {
-      low = mid+1;
-    }
-    else if(dist[mid].first > d1)
-    {
-      high = mid-1;
-    }
-    else
-    {
-      while(dist[mid].first == d1 && dist[mid+1].first == dist[mid].first && mid >0)
-      {
-        mid--;
-      }
-      break;
-    }
-  }
-  return dist[mid+1].second;
-}
+std::mutex mut;
 
 void *runChainParallelInstance(void *ptr)
 {
-  while(true)
+  std::pair<channel*, data*> *p = (std::pair<channel*, data*> *)ptr;
+  channel *ch = p->first;
+  data *dat = p->second;
+
+  int q = rand()%100;
+
+  mut.lock();
+  std::cerr << "Thread " << q << " Initialized" << std::endl;
+  mut.unlock();
+
+  while(!ch->canStop())
   {
-    int i1 = ch->getChain();
-
-    if((i1 >= dd || i1 < 0) && i1 != -1 )
+    mut.lock();
+    std::cerr << "Thread " << q << " asking for command" << std::endl;
+    mut.unlock();
+    std::pair<bool, std::pair<int, int> > z = ch->getCommand();
+    if(z.first)
     {
-      std::cerr << "Bad chain allocation " + std::to_string(i1) << std::endl;
-      errorHandler("Bad chain allocation " + std::to_string(i1));
-    }
-
-    if(i1 != -1) // If queue allows us to make a transition, we go ahead
-    {
-      X_lock[i1].lock();
-      int i2 = distSelector(cp[xx[i1]]); // Find the next vertex
-      if(i2 < 0 || i2 >= nn)
-      {
-        errorHandler err("Bad selection by distSelector");
-      }
-      int a = xx[i1];
-      int b = i2;
-      xx[i1] = b;
-      ch->pushUpdate(i1, std::make_pair(a, b)); // Push update
-      X_lock[i1].unlock();
+      mut.lock();
+      std::cerr << "Thread " << q << " got command to process" << std::endl;
+      mut.unlock();
+      ch->processQueue();
+      mut.lock();
+      std::cerr << "Thread " << q << " done processing" << std::endl;
+      mut.unlock();
     }
     else
     {
-      break;
+      int chain = z.second.first;
+      int curr = z.second.second; 
+      mut.lock();
+      std::cerr << "Thread " << q << " got command to run chain: " << chain << " currently at pos: " << curr  << std::endl;
+      mut.unlock();
+      int pos = distSelector(dat->Cum_P[curr]); // Find the next vertex
+      mut.lock();
+      std::cerr << "Thread " << q << " ran chain: " << chain << " to pos: " << pos  << std::endl;
+      mut.unlock();
+      if(pos < 0 || pos >= dat->n)
+      {
+        errorHandler err("Bad selection by distSelector");
+      }
+      mut.lock();
+      std::cerr << "Thread " << q << " pushing update " << pos  << std::endl;
+      mut.unlock();
+      ch->pushUpdate(chain, std::make_pair(curr, pos)); // Push update
+      mut.lock();
+      std::cerr << "Thread " << q << " pushed update to position: " << pos  << std::endl;
+      mut.unlock();
     }
   }
+  mut.lock();
+  std::cerr << "Thread " << q << " exiting "  << std::endl;
+  mut.unlock();
   pthread_exit(NULL);
 }
 
@@ -111,42 +77,51 @@ void *runChainParallelInstance(void *ptr)
  * @brief runs the chain 
  */
 
-channel* runChain(int n, int s, int d, double eps, std::vector<std::vector<std::pair<double, int> > > &CP)
+channel* runChain(data *dat)
 {
-  /***************************** Initialization *******************************/
-  nn = n;
-  ss = s;
-  dd = d;
-  ee = eps;
-  cp = CP;
 
-  xx.resize(d,s);
+  std::cerr << "runChain Started" << std::endl;
 
-  std::vector<std::mutex> tmp(d);
-  X_lock.swap(tmp);
+  int ss = 0;
 
-  // std::cerr << n << ' ' << eps << std::endl;
+  std::vector<int> x(dat->d, ss);
 
-  ch = new channel(nn, ss, dd, ee, xx);
+  std::cerr << "Before Channel init" << std::endl;
 
-  // std::cerr << "Before Chain Running" << std::endl;
+  channel *ch = new channel(dat->n, ss, dat->d, dat->eps, x, 0.5);
 
-  std::vector<pthread_t> threads(d);
-  for(int i = 0; i < d; i++)
+  std::cerr << "After Channel init" << std::endl;
+
+  std::vector<pthread_t> threads(dat->d);
+
+  std::pair<channel *, data*> p = std::make_pair(ch, dat);
+
+  std::cerr << "Before running threads" << std::endl;
+
+  int num_threads = dat->d;
+
+  for(int i = 0; i < num_threads; i++)
   {
-    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, NULL);
+    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, &p);
     if (err != 0)
     {
       errorHandler err("Error Creating Thread while running the chain");
     }
   }
 
-  //std::cerr << "Chains Running" << std::endl;
+  std::cerr << "Chains Running" << std::endl;
 
   while(!ch->canStop())
   {
     continue;
   }
+
+  for(int i = 0; i < num_threads; i++)
+  {
+    pthread_join(threads[i],NULL);
+  }
+
+  std::cerr << "Chains Exiting" << std::endl;
 
   return ch;
 }

@@ -12,13 +12,17 @@
 #include <bits/stdc++.h>
 #include "channel.h"
 #include "errorHandler.h"
+#include "chain.h"
+#include "distSelector.h"
+
+
 
 /**
 * @brief Default Constructor
 */
 channel::channel()
 {
-
+    
 }
 
 /**
@@ -26,51 +30,60 @@ channel::channel()
  * @param n Number of nodes
  * @param s Bootstrapped vertex
  * @param d Number of chains
+ * @param e Error bound
+ * @param x Initial position of chains
+ * @param p probability of assigning a thread to process the queue
 */
 
-channel::channel(int n, int s, int d, double e)
+
+channel::channel(int n, int s, int d, double e, std::vector<int> x, double pr)
 {
-    T = 0; // Initialize global clock to 0
-    eps = e; // Initialize error margin
-    dd = d;
-    D = d;
-    Q.resize(n,0); // Initially all queues empty
-    S.resize(n); // Initialize update tracking for each vertex
-    L.resize(n,0); // Initialize last seen for each vertex
-    mu.resize(n, 0); // Initialize average occupancy at each vertex
-    Q[s] = d; // Place all d packets at s
-    tm = new indexedSet<double>(n); // Initialize the indexed set
-    tm->setVal(s, INT_MAX); // Initialize timer at bootstraped vertex to infinity
+    std::cerr << "Channel BP-0" << std::endl;
+
     isDone = false; // Initialize isdone to false
-    batch_size = 4;
-}
-
-/**
- * @brief Creates a new channel object for given number of nodes, given start node, given number of chains
- * @param n Number of nodes
- * @param s Bootstrapped vertex
- * @param d Number of chains
- * @param X_P Initial position of chains
-*/
-
-channel::channel(int n, int s, int d, double e, std::vector<int> x)
-{
-    T = 0; // Initialize global clock to 0
     eps = e; // Initialize error margin
-    dd = d;
-    D = d-1;
-    Q.resize(n,0); // Initially all queues empty
-    S.resize(n); // Initialize update tracking for each vertex
+    p = pr; // Initialize probability of processing
+    T = 1; // Initialize global clock to 1
+    D = d; // Initialize number of chains
+    val_chain = 0;
+    max_queue_size = 10;
+    chains_run = 0;
+
     L.resize(n,0); // Initialize last seen for each vertex
     mu.resize(n, 0); // Initialize average occupancy at each vertex
-    tm = new indexedSet<double>(n); // Initialize the indexed set
-    for(int i = 0; i < (int)x.size(); i++)
+
+    selector = {{true, p}, {false, 1}};
+
+    std::cerr << "Channel BP-1" << std::endl;
+
+    std::vector<int> r(n,0);
+
+    tm = new indexedSet<double>(n);
+
+    for(auto it : x)
     {
-        Q[x[i]]++; // Increase occupancy at occupied vertices
-        tm->setVal(x[i], INT_MAX); // Set timer of occupied vertices to infinity
+        r[it]++; // Increase occupancy at occupied vertices
+        tm->setVal(it, INT_MAX); // Set timer of occupied vertices to infinity
     }
-    isDone = false; // Initialize isdone to false
-    batch_size = 4;
+    
+    std::cerr << "Channel BP-2" << std::endl;
+
+    old = new std::vector<int>();
+    head = new std::vector<int>();
+
+    *old = r;
+    *head = r;
+
+    std::cerr << "Channel BP-3" << std::endl;
+
+    head_modified = new std::unordered_set<int>();
+
+    tm = new indexedSet<double>(n); // Initialize the indexed set
+
+    chain_pos = x;
+
+    std::cerr << "Channel BP-4" << std::endl;
+
 }
 
 /**
@@ -80,27 +93,23 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x)
  * @return chain number of a valid chain to run
  * @return -1 if the thread can exit
  */
-int channel::getChain()
+std::pair<bool, std::pair<int, int> > channel::getCommand()
 {
-    m.lock();
-    if((int)R.size() >= dd * batch_size)
-    {
-        //std::cout << "Calling process at queue size: " << R.size() << std::endl;
-        process();
-        //std::cout << "Queue size after process: " << R.size() << std::endl;
+    if(!process_queue.empty() && ((int)process_queue.size() == max_queue_size || distSelector(selector))) {
+        return std::make_pair(true, std::make_pair(-1,-1));
     }
-    if(D==0)
-    {
-        D = dd-1; // Restore such that all chains are now valid
+    else{
+        int x = 0;
+        chain_lock.lock();
+        if(val_chain == D)
+        {
+            chain_lock.unlock();
+            return std::make_pair(true, std::make_pair(-1,-1));
+        }
+        x = val_chain++;
+        chain_lock.unlock();
+        return std::make_pair(false, std::make_pair(x, chain_pos[x]));
     }
-    int x = D--;
-    m.unlock();
-    if(isDone)
-    {
-        return -1;
-    }
-    return x;
-    
 }
 
 /**
@@ -122,9 +131,97 @@ bool channel::canStop()
  */
 void channel::pushUpdate(int chain, std::pair<int, int> p) // Add a transition in the queue
 {
-    m.lock();
-    R.push(p); // Push transition in the queue
-    m.unlock();
+    chains_run++;
+    (*head)[p.first]--;
+    (*head)[p.second]++;
+    (*head_modified).insert(p.first);
+    (*head_modified).insert(p.second);
+    if(chain_pos[chain] != p.first)
+    {
+        errorHandler err("Bad Transition");
+    }
+    chain_pos[chain] = p.second;
+    if(chains_run == D){
+        process_queue.push(head);
+        modified_queue.push(head_modified);
+        chains_run = 0;
+        val_chain = 0;
+        std::vector<int> *tmp = head;
+        head = new std::vector<int>();
+        *head = *tmp;
+        head_modified = new std::unordered_set<int>();
+    }
+}
+
+void channel::processQueue()
+{
+    io_lock.lock();
+    std::cout << "Process Queue Started" << std::endl;
+    io_lock.unlock();
+    if(process_queue.empty())
+    {
+        io_lock.lock();
+        std::cout << "Process Queue Empty" << std::endl;
+        io_lock.unlock();
+        return;
+    }
+    mod_lock.lock();
+    std::vector<int> *tolook = process_queue.front();
+    std::unordered_set<int> *q = modified_queue.front();
+    if(q->empty())
+    {
+        io_lock.lock();
+        std::cout << "All elements processed" << std::endl;
+        io_lock.unlock();
+        free(q);
+        modified_queue.pop();
+        free(old);
+        old = process_queue.front();
+        process_queue.pop();
+        if(tm->getMax() <= T * D)
+        {
+            isDone = true;
+        }
+        T++;
+        io_lock.lock();
+        std::cout << "Time : " << T << std::endl;
+        io_lock.unlock();
+        mod_lock.unlock();
+    }
+    else 
+    {
+
+        io_lock.lock();
+        std::cout << "Process Size: " << q->size() << std::endl;
+
+        int v = *(q->begin());
+        q->erase(q->begin());
+        mod_lock.unlock();
+        
+        int ot = L[v] * D;
+        int nt = T * D;
+        int oq = (*old)[v];
+        int nq = (*tolook)[v];
+
+        double r = mu[v] * ot + oq * (nt - ot -1) + nq;
+        r /= (double) nt;
+
+        mu[v] = r;
+
+        double disc = 4 * std::fabs(nq - mu[v]) * nt;
+        disc /= eps;
+        disc += 1;
+
+        double tim = 1 + sqrt(disc);
+        tim /= 2;
+
+        L[v] = T;
+
+        std::cout << "Process Size: " << q->size() << std::endl;
+        io_lock.unlock();
+        tm->setVal(v, ceil(tim));
+
+    }
 }
 
 
@@ -138,80 +235,6 @@ std::vector<double> channel::getMu()
     return mu;
 }
 
-/**
- * @brief Once all chains have pushed their updates, the processing thread is activated.
- * 
- * Processes all transitions present in the queue
- * 
- */
-void channel::process()
-{
-    // std::cerr << "Process started" << std::endl;
-    if(isDone)
-        return; // Nothing to do
-    std::set<int> updatedVertices;
-    while(!R.empty()) // Updates all transitions
-    { 
-        T++;
-        std::pair<int, int> p = R.front(); // Check out the front of the queue
-        R.pop(); // Pop the front of the queue
-
-        S[p.first].push(std::make_tuple(Q[p.first]-1, Q[p.first], T, L[p.first]));
-        S[p.second].push(std::make_tuple(Q[p.second]+1, Q[p.second], T, L[p.second]));
-
-        Q[p.first]--; // The packet left p.first
-        Q[p.second]++; // The packet arrived at p.second
-
-        L[p.first] = T; // Updates last seen for old vertex
-        L[p.second] = T; // Updates last seen for new vertex
-
-        updatedVertices.insert(p.first);
-        updatedVertices.insert(p.second);
-    }
-    // std::cerr << "Process here" << std::endl;
-    for(auto w : updatedVertices)
-    {
-        // std::cerr << w << " " << S[w].size() << " " << eps << std::endl;
-        while(!S[w].empty())
-        {
-            auto s = S[w].front(); // Current update to be processed
-            S[w].pop();
-
-            // std::cerr << "Checkpoint A" << std::endl;
-
-            int nq = std::get<0>(s); // New occupancy at w
-            int oq = std::get<1>(s); // Old occupancy at w
-            int nt = std::get<2>(s); // Time at which occupancy changed
-            int ot = std::get<3>(s); // Last seen time before the change in occupancy
-
-            // std::cerr << "Checkpoint B" << std::endl;
-
-            double z = mu[w] * ot + oq * (nt - ot - 1) + nq;
-            z /= nt;
-
-            mu[w] = z; // Updates the average occupancy at this point
-
-            double disc = 1 + 4 * ((fabs(nq-mu[w]) * ot)/eps);
-            double temp = sqrt(disc);
-            temp += 1;
-            temp /= 2;
-
-            // std::cerr << "Checkpoint C" << std::endl;
-
-            //std::cerr << w << ' ' << temp << std::endl;
-
-            tm->setVal(w, temp); // Updates the countdown timer in the indexed set
-
-            // std::cerr << "Checkpoint D" << std::endl;
-        }
-        // std::cerr << "Process there" << std::endl;
-    }
-    if(tm->getMax() <= T) // If the maximum time for any vertex to stabilize in occupancy is less than current time, we stop
-    {
-        isDone = true;
-    }
-    // std::cerr << "Process ended" << std::endl;
-}
 
 /**
  * @brief returns the total time

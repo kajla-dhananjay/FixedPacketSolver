@@ -10,6 +10,12 @@ channel: channel.cpp
 checkers: checkers.cpp
 	g++ -Wall -c checkers.cpp -o checkers.o
 
+data: data.cpp
+	g++ -Wall -c data.cpp -o data.o
+
+distSelector: distSelector.cpp
+	g++ -Wall -c distSelector.cpp -o distSelector.o
+
 errorHandler: errorHandler.cpp
 	g++ -Wall -c errorHandler.cpp -o errorHandler.o
 
@@ -22,8 +28,8 @@ indexedSet: indexedSet.cpp
 linalg: linalg.cpp 
 	g++ -Wall -c linalg.cpp -o linalg.o
 
-NaivePLW: NaivePLW.cpp chain channel checkers errorHandler indexedSet linalg
-	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o errorHandler.o indexedSet.o linalg.o -pthread
+NaivePLW: NaivePLW.cpp chain channel checkers data distSelector errorHandler indexedSet linalg
+	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o -pthread
 
 clean:
 	rm -rf formatter NaivePLW *.txt *.o
