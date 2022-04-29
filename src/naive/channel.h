@@ -18,6 +18,8 @@ class channel
 {
 private:
 
+  std::ofstream ofile; // Output file to log stuff
+
   bool isDone; // Indicator to check if all the processing is complete
   double eps; // Error Margin
   double p; // Probability of commanding a thread to act as a processor
@@ -58,8 +60,8 @@ public:
   bool canStop();
 
   std::pair<bool, std::pair<int, int> > getCommand(); 
-  void pushUpdate(int chain, std::pair<int, int> p);
-  void processQueue();
+  void pushUpdate(int id, std::ofstream &tfile, int chain, std::pair<int, int> p);
+  void processQueue(int id, std::ofstream &tfile);
 
 
   int getT();

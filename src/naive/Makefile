@@ -31,5 +31,8 @@ linalg: linalg.cpp
 NaivePLW: NaivePLW.cpp chain channel checkers data distSelector errorHandler indexedSet linalg
 	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o -pthread
 
+dbg: NaivePLW.cpp chain channel checkers data distSelector errorHandler indexedSet linalg
+	g++ -g -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o -pthread
+
 clean:
 	rm -rf formatter NaivePLW *.txt *.o

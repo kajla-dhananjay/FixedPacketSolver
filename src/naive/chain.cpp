@@ -11,63 +11,54 @@
  * @return void* Exit value of thread(NULL)
  */
 
-std::mutex mut;
 
 void *runChainParallelInstance(void *ptr)
 {
-  std::pair<channel*, data*> *p = (std::pair<channel*, data*> *)ptr;
-  channel *ch = p->first;
-  data *dat = p->second;
+  std::tuple<channel*, data*, int> *p = (std::tuple<channel*, data*, int> *)ptr;
+  channel *ch = std::get<0>(*p);
+  data *dat = std::get<1>(*p);
+  int q = std::get<2>(*p);
 
-  int q = rand()%100;
+  std::ofstream ofile;
+  ofile.open(("thread_log_"+std::to_string(q) + ".txt").c_str());
 
-  mut.lock();
-  std::cerr << "Thread " << q << " Initialized" << std::endl;
-  mut.unlock();
+  ofile << "Thread Initialized" << std::endl;
 
   while(!ch->canStop())
   {
-    mut.lock();
-    std::cerr << "Thread " << q << " asking for command" << std::endl;
-    mut.unlock();
+    ofile << "Thread asking for command" << std::endl;
     std::pair<bool, std::pair<int, int> > z = ch->getCommand();
+    ofile << "Thread got command" << std::endl;
     if(z.first)
     {
-      mut.lock();
-      std::cerr << "Thread " << q << " got command to process" << std::endl;
-      mut.unlock();
-      ch->processQueue();
-      mut.lock();
-      std::cerr << "Thread " << q << " done processing" << std::endl;
-      mut.unlock();
+      if(z.second.first == 0)
+      {
+        ofile << "Thread got command to process via full val_chain" << std::endl;
+      }
+      else 
+      {
+        ofile << "Thread got command to process through usual means" << std::endl;
+      }
+      ch->processQueue(q, ofile);
+      ofile << "Thread done processing" << std::endl;
     }
     else
     {
       int chain = z.second.first;
       int curr = z.second.second; 
-      mut.lock();
-      std::cerr << "Thread " << q << " got command to run chain: " << chain << " currently at pos: " << curr  << std::endl;
-      mut.unlock();
+      ofile << "Thread got command to run chain: " << chain << " currently at pos: " << curr  << std::endl;
       int pos = distSelector(dat->Cum_P[curr]); // Find the next vertex
-      mut.lock();
-      std::cerr << "Thread " << q << " ran chain: " << chain << " to pos: " << pos  << std::endl;
-      mut.unlock();
+      ofile << "Thread ran chain: " << chain << " from pos: " << curr <<  " to pos: " << pos  << std::endl;
       if(pos < 0 || pos >= dat->n)
       {
         errorHandler err("Bad selection by distSelector");
       }
-      mut.lock();
-      std::cerr << "Thread " << q << " pushing update " << pos  << std::endl;
-      mut.unlock();
-      ch->pushUpdate(chain, std::make_pair(curr, pos)); // Push update
-      mut.lock();
-      std::cerr << "Thread " << q << " pushed update to position: " << pos  << std::endl;
-      mut.unlock();
+      ofile << "Thread pushing update for chain " << chain  << std::endl;
+      ch->pushUpdate(q, ofile, chain, std::make_pair(curr, pos)); // Push update
+      ofile << "Thread pushed update for chain: " << chain  << std::endl;
     }
   }
-  mut.lock();
-  std::cerr << "Thread " << q << " exiting "  << std::endl;
-  mut.unlock();
+  ofile << "Thread exiting "  << std::endl;
   pthread_exit(NULL);
 }
 
@@ -94,15 +85,25 @@ channel* runChain(data *dat)
 
   std::vector<pthread_t> threads(dat->d);
 
-  std::pair<channel *, data*> p = std::make_pair(ch, dat);
+  //std::pair<channel *, data*> p = std::make_pair(ch, dat);
 
-  std::cerr << "Before running threads" << std::endl;
+  std::vector<std::tuple<channel*, data*, int> > vtt;
 
   int num_threads = dat->d;
 
+  num_threads = 2;
+
   for(int i = 0; i < num_threads; i++)
   {
-    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, &p);
+    vtt.push_back(std::make_tuple(ch,dat,i));
+  }
+
+  std::cerr << "Before running threads" << std::endl;
+
+
+  for(int i = 0; i < num_threads; i++)
+  {
+    int err = pthread_create(&(threads[i]), NULL, runChainParallelInstance, &vtt[i]);
     if (err != 0)
     {
       errorHandler err("Error Creating Thread while running the chain");
