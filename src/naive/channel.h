@@ -29,18 +29,16 @@ private:
   int max_queue_size; // Maximum size of queue until runner threads can run
   int chains_run; // Chains run until a new transition
 
-  std::mutex chain_lock; // Mutex to lock val_chain
-  std::mutex mod_lock; // Mutex to lock modified values
+  std::mutex process_lock; // Mutex to lock val_chain
+  std::mutex update_lock; // Mutex to lock modified values
   std::mutex io_lock; // Mutex to lock IO
+
+  std::vector<std::vector<std::pair<double, int> > > CP; // Cumulative transition matrix
 
   std::vector<int> L; // Indicates when was the last time a given vertex was updated
 
   std::vector<double> mu; // Average vertex occupancy until processing the start of queue
   indexedSet<double>* tm; // Indexed priority queue to keep track of the bottleneck vertex
-
-
-  std::vector<std::pair<double, bool> > selector; // Chooses whether to assign a thread to process or to run
-
 
   std::vector<int> *old; // Tracks last known occupancies
   std::vector<int> *head; //Tracks current occupancies
@@ -54,14 +52,12 @@ private:
 
 public:
   channel();
-  channel(int n, int s, int d, double e, std::vector<int> x, double pr);
+  channel(int n, int s, int d, double e, std::vector<int> x, std::vector<std::vector<std::pair<double, int> > > &cp, double pr);
   ~channel();
 
   bool canStop();
 
-  std::pair<bool, std::pair<int, int> > getCommand(); 
-  void pushUpdate(int id, std::ofstream &tfile, int chain, std::pair<int, int> p);
-  void processQueue(int id, std::ofstream &tfile);
+  bool runInstance(int id); 
 
 
   int getT();
