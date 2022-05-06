@@ -87,9 +87,9 @@ data *init()
   e = 1;
   e /= ((double)g->n);
   e /= ((double)g->n);
-  e /= ((double)g->n);
+  // e /= ((double)g->n);
   
-  e = 0.000000001;
+  //e = 0.000000001;
   
   data *dat = new data(g, b, e);
 
@@ -147,10 +147,10 @@ void end(channel *chan, data *dat)
 
   //std::cout << "Final Result: " << std::endl;
 
-  for(auto it : x)
-  {
-    std::cout << it << std::endl;
-  }
+  // for(auto it : x)
+  // {
+  //   std::cout << it << std::endl;
+  // }
 
   std::cout << "Total Iterations: " << iterations << std::endl;
 
@@ -193,15 +193,15 @@ int main()
 
   srand(time(0));
 
-  // std::cerr << "Start" << std::endl;
+  std::cerr << "Start" << std::endl;
 
   data *dat = init();
 
-  // std::cerr << "Init Done" << std::endl;
+  std::cerr << "Init Done" << std::endl;
 
   channel *chan = runChain(dat);
 
-  // std::cerr << "runChain Done" << std::endl;
+  std::cerr << "runChain Done" << std::endl;
 
   end(chan, dat);
 
