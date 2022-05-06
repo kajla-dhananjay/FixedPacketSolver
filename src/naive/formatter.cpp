@@ -135,9 +135,9 @@ int main()
   n = new_n;
   int r = n/2;
   double z = 0;
-  std::vector<double> v(r, 0); // r to n 
+  std::vector<double> v(n); // r to n 
   int t = 0;
-  int num_sources = std::min(40,r-1); // r to n
+  int num_sources = std::min(40,n-1); // r to n
   for(; t < num_sources; t++)
   {
     double q = 1;
@@ -146,13 +146,14 @@ int main()
   }
   v[t] = -1 * z;
 
-  std::random_shuffle(v.begin(), v.end());
-
-
-  for(int i = r+1; i < n; i++) // remove this loop
+  for(int i = num_sources+1; i < n; i++) // remove this loop
   {
     v.push_back(0);
   }
+  
+  std::random_shuffle(v.begin(), v.end());
+
+
 
 
   std::cout << n << std::endl;

@@ -27,6 +27,7 @@ std::vector<T> matrix_vector_mult(std::vector<std::vector<T> > mat, std::vector<
   }
   return ans;
 }
+template std::vector<double> matrix_vector_mult<double>(std::vector<std::vector<double> > mat, std::vector<double> v);
 
 template<typename T>
 std::vector<T> vector_scalar_mult(std::vector<T> v, T val)
@@ -37,6 +38,7 @@ std::vector<T> vector_scalar_mult(std::vector<T> v, T val)
   }
   return v;
 }
+template std::vector<double> vector_scalar_mult<double>(std::vector<double> v, double val);
 
 template<typename T>
 std::vector<T> vector_addition(std::vector<T> a, std::vector<T> b)
@@ -51,6 +53,7 @@ std::vector<T> vector_addition(std::vector<T> a, std::vector<T> b)
   }
   return a;
 }
+template std::vector<double> vector_addition<double>(std::vector<double> a, std::vector<double> b);
 
 template<typename T>
 T l1_norm(std::vector<T> a)
@@ -62,6 +65,7 @@ T l1_norm(std::vector<T> a)
   }
   return r;
 }
+template double l1_norm<double>(std::vector<double> a);
 
 template<typename T>
 T l2_norm(std::vector<T> a)
@@ -74,6 +78,7 @@ T l2_norm(std::vector<T> a)
   r = sqrt(r);
   return r;
 }
+template double l2_norm<double>(std::vector<double> a);
 
 template<typename T>
 T inf_norm(std::vector<T> a)
@@ -88,3 +93,4 @@ T inf_norm(std::vector<T> a)
   }
   return r;
 }
+template double inf_norm<double>(std::vector<double> a);

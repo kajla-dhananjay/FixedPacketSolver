@@ -26,7 +26,7 @@
 #include "linalg.h"
 
 /************************* Global Declarations ********************************/
- 
+
 
 graph *input_graph()
 {
@@ -89,6 +89,7 @@ data *init()
   e /= ((double)g->n);
   e /= ((double)g->n);
   
+  e = 0.000000001;
   
   data *dat = new data(g, b, e);
 
@@ -156,19 +157,19 @@ void end(channel *chan, data *dat)
 
   // #ifdef DEBUG
 
-  // std::vector<double> Lx = matrix_vector_mult(L, x);
-  // std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(b, -1.0));
-  // std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
+  //  std::vector<double> Lx = matrix_vector_mult(dat->L, x);
+  //  std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(dat->b, -1.0));
+  //  std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
   // std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
   // std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
-  // std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(b) << std::endl; 
+  //  std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(dat->b) << std::endl; 
   // std::cout << "L1 norm(normalized to n): " << l1_norm(Lx_b) / n << std::endl; 
   // std::cout << "L2 norm(normalized to b): " << l2_norm(Lx_b) / l2_norm(b) << std::endl;
   // std::cout << "L2 norm(normalized to n): " << l2_norm(Lx_b) / n << std::endl;
   // std::cout << "Infinity norm(normalized to b): " << inf_norm(Lx_b) / inf_norm(b) << std::endl;
   // std::cout << "Infinity norm(normalized to n): " << inf_norm(Lx_b) / n << std::endl;
   // std::cout << "Averaged L1 norm (L1 norm divided by n): " << l1_norm(Lx_b) / n  << std::endl; 
-  // std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (n * l1_norm(b)) << std::endl; 
+  //  std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (dat->n * l1_norm(dat->b)) << std::endl; 
   // #endif
 
 }

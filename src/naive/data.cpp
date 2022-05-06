@@ -26,6 +26,8 @@ data::data(graph *g, std::vector<double> *v, double e)
 
     // std::cerr << "Graph Input BP-2" << std::endl;
 
+    this->L.resize(n, std::vector<double>(n));
+
     for(auto it : g->edges) // Input the edges
     {
         int i1 = std::get<0>(it);
@@ -37,6 +39,8 @@ data::data(graph *g, std::vector<double> *v, double e)
         Cum_P[i1].push_back(std::make_pair(D[i1], i2)); // Add i2 to cumulative distribution of i1
         Cum_P[i2].push_back(std::make_pair(D[i2], i1)); // Add i1 to cumulative distribution of i2
 
+        L[i1][i2] = -1 * d1;
+        L[i2][i1] = -1 * d1;
     }
 
     // std::cerr << "Graph Input BP-3" << std::endl;
@@ -57,6 +61,7 @@ data::data(graph *g, std::vector<double> *v, double e)
         {
             it.first /= D[i];
         }
+        L[i][i] = D[i];
     }
   
 

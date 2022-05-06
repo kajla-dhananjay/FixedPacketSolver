@@ -37,6 +37,8 @@ public:
 
     std::vector<std::vector<std::pair<double, int> > > Cum_P; ///< Cumulative Transition Matrix
 
+    std::vector<std::vector<double> > L; ///< Graph Laplacian [Optional]
+
     data();
     data(graph *g, std::vector<double> *v, double e);
 };
