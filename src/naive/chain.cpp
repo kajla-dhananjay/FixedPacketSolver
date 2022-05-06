@@ -11,13 +11,17 @@
  * @return void* Exit value of thread(NULL)
  */
 
+std::mutex io_lock;
 
 void *runChainParallelInstance(void *ptr)
 {
+
   std::tuple<channel*, int> *p = (std::tuple<channel*, int> *)ptr;
   channel *ch = std::get<0>(*p);
   int q = std::get<1>(*p);
-
+  // io_lock.lock();
+  // std::cerr << "Thread: " << q << " started." << std::endl;
+  // io_lock.unlock();
   bool canStop = false;
 
   while(!canStop)
@@ -36,17 +40,17 @@ void *runChainParallelInstance(void *ptr)
 channel* runChain(data *dat)
 {
 
-  std::cerr << "runChain Started" << std::endl;
+  // std::cerr << "runChain Started" << std::endl;
 
   int ss = 0;
 
   std::vector<int> x(dat->d, ss);
 
-  std::cerr << "Before Channel init" << std::endl;
+  // std::cerr << "Before Channel init" << std::endl;
 
   channel *ch = new channel(dat->n, ss, dat->d, dat->eps, x, dat->Cum_P, 0.5);
 
-  std::cerr << "After Channel init" << std::endl;
+  // std::cerr << "After Channel init" << std::endl;
 
   std::vector<pthread_t> threads(dat->d);
 
@@ -56,14 +60,14 @@ channel* runChain(data *dat)
 
   int num_threads = dat->d;
 
-  num_threads = 2;
+  num_threads = 5;
 
   for(int i = 0; i < num_threads; i++)
   {
     vtt.push_back(std::make_tuple(ch,i));
   }
 
-  std::cerr << "Before running threads" << std::endl;
+  // std::cerr << "Before running threads" << std::endl;
 
 
   for(int i = 0; i < num_threads; i++)
@@ -75,7 +79,7 @@ channel* runChain(data *dat)
     }
   }
 
-  std::cerr << "Chains Running" << std::endl;
+  // std::cerr << "Chains Running" << std::endl;
 
   while(!ch->canStop())
   {
@@ -87,7 +91,7 @@ channel* runChain(data *dat)
     pthread_join(threads[i],NULL);
   }
 
-  std::cerr << "Chains Exiting" << std::endl;
+  // std::cerr << "Chains Exiting" << std::endl;
 
   return ch;
 }

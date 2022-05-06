@@ -39,13 +39,14 @@ channel::channel()
 channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<std::vector<std::pair<double, int> > > &cp, double pr)
 {
   ofile.open("channel_logs.txt");
-  
+
   isDone = false; // Initialize isdone to false
   eps = e; // Initialize error margin
   p = pr; // Initialize probability of processing
   T = 1; // Initialize global clock to 1
   D = d; // Initialize number of chains
   val_chain = 0;
+  chains_run = 0;
   max_queue_size = 10;
 
   CP = cp;
@@ -69,11 +70,18 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<
   *old = r;
   *head = r;
 
+  chain_pos = x;
+
+  std::vector<int> rrr((*head).size());
+  for(int i = 0; i < D; i++)
+  {
+    rrr[chain_pos[i]]++;
+  }
+
   head_modified = new std::unordered_set<int>();
 
   tm = new indexedSet<double>(n); // Initialize the indexed set
 
-  chain_pos = x;
 }
 
 /**
@@ -85,8 +93,14 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<
  */
 bool channel::runInstance(int id)
 {
-  if(!process_queue.empty()) // processes chain
+  io_lock.lock();
+  ofile << "Id: " << id << " run" << std::endl;
+  io_lock.unlock();
+  if(false) // processes chain 
   {
+    io_lock.lock();
+    ofile << "Id: " << id << " run to process" << std::endl;
+    io_lock.unlock();
     process_lock.lock();
     bool aa = process_queue.empty();
     bool bb = modified_queue.empty();
@@ -154,25 +168,97 @@ bool channel::runInstance(int id)
   }
   else // runs chain
   {
+    io_lock.lock();
+    ofile << "Id: " << id << " run to run Chain" << std::endl;
+    io_lock.unlock();
     update_lock.lock();
+    if(process_queue.size() == 10)
+    {
+      io_lock.lock();
+      isDone = true;
+      ofile << "The Chain Positions are as follows: " << std::endl;
+      std::vector<std::vector<int> > v(mu.size());
+      for(int i = 0; i < (int)(*old).size(); i++)
+      {
+        v[i].push_back((*old)[i]);
+      }
+      while(!process_queue.empty())
+      {
+        std::vector<int> vv = *(process_queue.front());
+        process_queue.pop();
+        if(vv.size() != v.size())
+        {
+          ofile << "Size Issue" << std::endl;
+          exit(2);
+        }
+        for(int i = 0; i < (int)v.size(); i++)
+        {
+          v[i].push_back(vv[i]);
+        }
+      }
+      for(int i = 0; i < (int)v.size(); i++)
+      {
+        ofile << i << ": ";
+        for(auto it : v[i])
+        {
+          ofile << it << " ";
+        }
+        ofile << std::endl;
+      }
+
+      ofile << "The Chain Modifications are as follows: " << std::endl;
+      int cnt = 0;
+      while(!modified_queue.empty())
+      {
+        ofile << cnt << std::endl;
+        std::unordered_set<int> *q = modified_queue.front();
+        modified_queue.pop();
+        for(auto it : *q)
+        {
+          ofile << it << ' ';
+        }
+        ofile << std::endl;
+        cnt++;
+      }
+      ofile.close();
+      io_lock.unlock();
+      exit(0);
+    }
+
     int chain_no = val_chain++;
-    if(val_chain < D)
+    if(val_chain <= D)
     {
       update_lock.unlock();
+      int pre_vertex = chain_pos[chain_no];
+      int post_vertex = distSelector(CP[pre_vertex]);
+
+      mod_lock.lock();
+
+      (*head)[pre_vertex]--;
+      (*head)[post_vertex]++;
+      
+      head_modified->insert(pre_vertex);
+      head_modified->insert(post_vertex);
+
+      chain_pos[chain_no] = post_vertex;
+
+
+      io_lock.lock();
+      ofile << "Id: " << id << " Chain: " << chain_no << " moved from " << pre_vertex << " to " << post_vertex << std::endl;
+      ofile << "Val_chain: " << val_chain << ", chains_run: " << chains_run << std::endl;
+      io_lock.unlock();
+      chains_run++;
+      mod_lock.unlock();
     }
-    int pre_vertex = chain_pos[chain_no];
-    int post_vertex = distSelector(CP[pre_vertex]);
-
-    (*head)[pre_vertex]--;
-    (*head)[post_vertex]++;
-    
-    head_modified->insert(pre_vertex);
-    head_modified->insert(post_vertex);
-
-    chain_pos[chain_no] = post_vertex;
-
-    if(val_chain >= D)
+    else
     {
+      while(chains_run < D)
+      {
+        continue;
+      }
+      io_lock.lock();
+      ofile << "Tid: " << id << " Chain_Reset" << std::endl;
+      io_lock.unlock();
       process_queue.push(head);
       modified_queue.push(head_modified);
 
@@ -182,6 +268,7 @@ bool channel::runInstance(int id)
       head_modified = new std::unordered_set<int>();
 
       val_chain = 0;
+      chains_run = 0;
       update_lock.unlock();
     }
 

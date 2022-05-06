@@ -171,18 +171,18 @@ int main()
 
   srand(time(0));
 
-  std::cerr << "Start" << std::endl;
+  // std::cerr << "Start" << std::endl;
 
   data *dat = init();
 
-  std::cerr << "Init Done" << std::endl;
+  // std::cerr << "Init Done" << std::endl;
 
   channel *chan = runChain(dat);
 
-  std::cerr << "runChain Done" << std::endl;
+  // std::cerr << "runChain Done" << std::endl;
 
   end(chan, dat);
 
-  std::cerr << "Init Done" << std::endl;
+  // std::cerr << "End Done" << std::endl;
 
 }
