@@ -19,15 +19,16 @@ void *runChainParallelInstance(void *ptr)
   std::tuple<channel*, int> *p = (std::tuple<channel*, int> *)ptr;
   channel *ch = std::get<0>(*p);
   int q = std::get<1>(*p);
-  // io_lock.lock();
-  // std::cerr << "Thread: " << q << " started." << std::endl;
-  // io_lock.unlock();
+  io_lock.lock();
+  //std::cerr << "Thread: " << q << " started." << std::endl;
+  io_lock.unlock();
   bool canStop = false;
 
   while(!canStop)
   {
     canStop = ch->runInstance(q);
   }
+
   pthread_exit(NULL);
 }
 
@@ -81,17 +82,12 @@ channel* runChain(data *dat)
 
   // std::cerr << "Chains Running" << std::endl;
 
-  while(!ch->canStop())
-  {
-    continue;
-  }
-
   for(int i = 0; i < num_threads; i++)
   {
-    pthread_join(threads[i],NULL);
+    pthread_join(threads[i], NULL);
   }
 
-  // std::cerr << "Chains Exiting" << std::endl;
+  // std::cerr << "Chains Exit" << std::endl;
 
   return ch;
 }

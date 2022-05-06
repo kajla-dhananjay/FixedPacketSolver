@@ -33,6 +33,8 @@ private:
   std::mutex update_lock; // Mutex to lock modified values
   std::mutex mod_lock; // Mutex to lock IO
   std::mutex io_lock; 
+  std::mutex tm_lock;
+  std::mutex queue_lock;
 
   std::vector<std::vector<std::pair<double, int> > > CP; // Cumulative transition matrix
 

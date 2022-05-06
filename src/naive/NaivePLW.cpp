@@ -89,6 +89,7 @@ data *init()
   e /= ((double)g->n);
   e /= ((double)g->n);
   
+  
   data *dat = new data(g, b, e);
 
   // std::cerr << "Data Generated" << std::endl;
@@ -106,6 +107,23 @@ void end(channel *chan, data *dat)
 {
   std::vector<double> x = chan->getMu();
   int iterations = chan->getT();
+
+  // std::cout << "Final average occupancies: " << std::endl;
+
+  // for(int i = 0; i < (int)x.size(); i++)
+  // {
+  //   x[i] = 1.0;
+  //   std::cout << i << ' ' << x[i] << std::endl;
+  // }
+
+  // std::cout << dat->u << std::endl;
+
+  // std::cout << dat->D.size() << std::endl;
+  // for(auto it : dat->D)
+  // {
+  //   std::cout << it << std::endl;
+  // }
+
   double z = x[dat->u];
   x[dat->u] = 0;
   double z_star = 0;
@@ -117,20 +135,23 @@ void end(channel *chan, data *dat)
   }
   z_star /= dat->n;
 
+  // std::cout << z_star << std::endl;
+
   for(int i = 0; i < dat->n; i++)
   {
     x[i] -= z_star;
     x[i] *= dat->sb;
   }
   
-  std::cout << "Total Iterations: " << iterations << std::endl;
 
-  std::cout << "Final Result: " << std::endl;
+  //std::cout << "Final Result: " << std::endl;
 
   for(auto it : x)
   {
     std::cout << it << std::endl;
   }
+
+  std::cout << "Total Iterations: " << iterations << std::endl;
 
 
   // #ifdef DEBUG

@@ -93,17 +93,19 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<
  */
 bool channel::runInstance(int id)
 {
-  io_lock.lock();
-  ofile << "Id: " << id << " run" << std::endl;
-  io_lock.unlock();
-  if(false) // processes chain 
+  // io_lock.lock();
+  // ofile << "Id: " << id << " run" << std::endl;
+  // io_lock.unlock();
+  if(!process_queue.empty()) // processes chain 
   {
-    io_lock.lock();
-    ofile << "Id: " << id << " run to process" << std::endl;
-    io_lock.unlock();
+    // io_lock.lock();
+    // ofile << "Id: " << id << " run to process" << std::endl;
+    // io_lock.unlock();
     process_lock.lock();
+    queue_lock.lock();
     bool aa = process_queue.empty();
     bool bb = modified_queue.empty();
+    queue_lock.unlock();
     if(aa && bb)
     {
       process_lock.unlock();
@@ -111,24 +113,32 @@ bool channel::runInstance(int id)
     }
     else if(aa || bb)
     {
-      errorHandler err("Process_queue and Modified_queue not in sync");
+      errorHandler err("Process_queue and Modified_queue not in sync " + std::to_string(aa) + " " + std::to_string(bb));
     }
     else 
     {
       std::vector<int> *tolook = process_queue.front();
       std::unordered_set<int> *q = modified_queue.front();
-
       if(q->empty())
       {
-        free(q);
+        // std::cerr << "Before deleting old" << std::endl;
+        // delete old;
+        // std::cerr << "After deleting old" << std::endl;
+        // std::cerr << "Before deleting q" << std::endl;
+        // delete q;
+        // std::cerr << "After deleting q" << std::endl;
         modified_queue.pop();
-        free(old);
-        old = process_queue.front();
         process_queue.pop();
+        old = tolook;
+        // io_lock.lock();
+        // ofile << "Queue popped by id: " << id << std::endl;
+        // io_lock.unlock();
         if(tm->getMax() <= T * D)
         {
           isDone = true;
-          ofile << "Done" << std::endl;
+          // io_lock.lock();
+          // ofile << "Done" << std::endl;
+          // io_lock.unlock();
         }
         T++;
         process_lock.unlock();
@@ -160,7 +170,9 @@ bool channel::runInstance(int id)
 
         L[v] = T;
 
+        tm_lock.lock();
         tm->setVal(v, ceil(tim));
+        tm_lock.unlock();
 
       }
     }
@@ -168,62 +180,10 @@ bool channel::runInstance(int id)
   }
   else // runs chain
   {
-    io_lock.lock();
-    ofile << "Id: " << id << " run to run Chain" << std::endl;
-    io_lock.unlock();
+    // io_lock.lock();
+    // ofile << "Id: " << id << " run to run Chain" << std::endl;
+    // io_lock.unlock();
     update_lock.lock();
-    if(process_queue.size() == 10)
-    {
-      io_lock.lock();
-      isDone = true;
-      ofile << "The Chain Positions are as follows: " << std::endl;
-      std::vector<std::vector<int> > v(mu.size());
-      for(int i = 0; i < (int)(*old).size(); i++)
-      {
-        v[i].push_back((*old)[i]);
-      }
-      while(!process_queue.empty())
-      {
-        std::vector<int> vv = *(process_queue.front());
-        process_queue.pop();
-        if(vv.size() != v.size())
-        {
-          ofile << "Size Issue" << std::endl;
-          exit(2);
-        }
-        for(int i = 0; i < (int)v.size(); i++)
-        {
-          v[i].push_back(vv[i]);
-        }
-      }
-      for(int i = 0; i < (int)v.size(); i++)
-      {
-        ofile << i << ": ";
-        for(auto it : v[i])
-        {
-          ofile << it << " ";
-        }
-        ofile << std::endl;
-      }
-
-      ofile << "The Chain Modifications are as follows: " << std::endl;
-      int cnt = 0;
-      while(!modified_queue.empty())
-      {
-        ofile << cnt << std::endl;
-        std::unordered_set<int> *q = modified_queue.front();
-        modified_queue.pop();
-        for(auto it : *q)
-        {
-          ofile << it << ' ';
-        }
-        ofile << std::endl;
-        cnt++;
-      }
-      ofile.close();
-      io_lock.unlock();
-      exit(0);
-    }
 
     int chain_no = val_chain++;
     if(val_chain <= D)
@@ -243,10 +203,10 @@ bool channel::runInstance(int id)
       chain_pos[chain_no] = post_vertex;
 
 
-      io_lock.lock();
-      ofile << "Id: " << id << " Chain: " << chain_no << " moved from " << pre_vertex << " to " << post_vertex << std::endl;
-      ofile << "Val_chain: " << val_chain << ", chains_run: " << chains_run << std::endl;
-      io_lock.unlock();
+      // io_lock.lock();
+      // ofile << "Id: " << id << " Chain: " << chain_no << " moved from " << pre_vertex << " to " << post_vertex << std::endl;
+      // ofile << "Val_chain: " << val_chain << ", chains_run: " << chains_run << std::endl;
+      // io_lock.unlock();
       chains_run++;
       mod_lock.unlock();
     }
@@ -256,11 +216,13 @@ bool channel::runInstance(int id)
       {
         continue;
       }
-      io_lock.lock();
-      ofile << "Tid: " << id << " Chain_Reset" << std::endl;
-      io_lock.unlock();
+      // io_lock.lock();
+      // ofile << "Tid: " << id << " Chain_Reset" << std::endl;
+      // io_lock.unlock();
+      queue_lock.lock();
       process_queue.push(head);
       modified_queue.push(head_modified);
+      queue_lock.unlock();
 
       std::vector<int> *tmp = head;
       head = new std::vector<int>();
