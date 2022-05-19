@@ -35,6 +35,7 @@ private:
   std::mutex io_lock; 
   std::mutex tm_lock;
   std::mutex queue_lock;
+  std::mutex garbage_lock;
 
   std::vector<std::vector<std::pair<double, int> > > CP; // Cumulative transition matrix
 
@@ -47,6 +48,9 @@ private:
   std::vector<int> *head; //Tracks current occupancies
   
   std::unordered_set<int> *head_modified;
+
+  std::queue<std::vector<int> *> old_process;
+  std::queue<std::unordered_set<int> *> old_modified;
 
   std::queue<std::vector<int> *> process_queue;
   std::queue<std::unordered_set<int> *> modified_queue;

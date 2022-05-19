@@ -15,7 +15,7 @@ data::data()
 
 data::data(graph *g, std::vector<double> *v, double e)
 {
-    std::cerr << "Graph Input BP-1" << std::endl;
+    // std::cerr << "Graph Input BP-1" << std::endl;
 
     this->n = g->n;
     this->m = g->m;
@@ -24,7 +24,7 @@ data::data(graph *g, std::vector<double> *v, double e)
 
     this->D.resize(n); // Initialize Total node weight tracker
 
-    std::cerr << "Graph Input BP-2" << std::endl;
+    // std::cerr << "Graph Input BP-2" << std::endl;
 
     // this->L.resize(n, std::vector<double>(n));
 
@@ -43,14 +43,14 @@ data::data(graph *g, std::vector<double> *v, double e)
         // L[i2][i1] = -1 * d1;
     }
 
-    std::cerr << "Graph Input BP-3" << std::endl;
+    // std::cerr << "Graph Input BP-3" << std::endl;
 
     if(!checkConnected(Cum_P)) // Check if the graph is connected
     {
         errorHandler err("Given Graph is not connected");
     }
 
-    std::cerr << "Graph Input BP-4" << std::endl;
+    // std::cerr << "Graph Input BP-4" << std::endl;
 
 
   /*****************************Create Cumulative Transition Matrix***********/
@@ -64,7 +64,7 @@ data::data(graph *g, std::vector<double> *v, double e)
         // L[i][i] = D[i];
     }
 
-    std::cerr << "Graph Input BP-5" << std::endl;
+    // std::cerr << "Graph Input BP-5" << std::endl;
   
 
   /*****************************Take Column Vector Input***********************/
@@ -82,30 +82,30 @@ data::data(graph *g, std::vector<double> *v, double e)
 
     this->sb = 0;
 
-    std::cerr << "Graph Input BP-6" << std::endl;
+    // std::cerr << "Graph Input BP-6" << std::endl;
 
     for(int i = 0; i < (int)v->size(); i++)
     {
-      std::cerr << i << ' ' << (*v)[i] << std::endl;
+      // std::cerr << i << ' ' << (*v)[i] << std::endl;
         this->b[i] = (*v)[i];
 
         if(this->b[i] < 0 && u == -1) // Finding the sink
         {
-          std::cerr << "YO" << std::endl;
-          exit(0);
-            u = i; // Indentified u 
+          // std::cerr << "YO" << std::endl;
+          // exit(1);
+          u = i; // Indentified u 
         }
         else if(b[i] < 0) // Identified Multiple sinks
         {
-            errorHandler err("Multiple Sinks");
+          errorHandler err("Multiple Sinks");
         }
         else // Possible source
         {
-            sb += b[i]; // Sum of all b cordinates
+          sb += b[i]; // Sum of all b cordinates
         }
     }
 
-    std::cerr << "Graph Input BP-7" << std::endl;
+    // std::cerr << "Graph Input BP-7" << std::endl;
 
   double d1 = 0; // Cumulative j
 
@@ -123,11 +123,11 @@ data::data(graph *g, std::vector<double> *v, double e)
     }
   }
 
-  std::cerr << "Graph Input BP-8" << std::endl;
+  // std::cerr << "Graph Input BP-8" << std::endl;
 
   Cum_P[u] = sources; // Initializing Cum_P[u]
 
-  std::cerr << "Graph Input BP-9" << std::endl;
+  // std::cerr << "Graph Input BP-9" << std::endl;
 
   this->eps = e;
 }

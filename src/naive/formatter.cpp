@@ -135,16 +135,16 @@ int main()
   n = new_n;
   int r = n/2;
   double z = 0;
-  std::vector<double> v(n); // r to n 
+  std::vector<double> v; // r to n 
   int t = 0;
   int num_sources = std::min(40,n-1); // r to n
   for(; t < num_sources; t++)
   {
     double q = 1;
     z += q;
-    v[t] = q;
+    v.push_back(q);
   }
-  v[t] = -1 * z;
+  v.push_back(-1 * z);
 
   for(int i = num_sources+1; i < n; i++) // remove this loop
   {
@@ -153,7 +153,11 @@ int main()
   
   std::random_shuffle(v.begin(), v.end());
 
-
+  if(v.size() != n)
+  {
+    std::cerr << "Bad b " << v.size() << " " << n << std::endl;
+    exit(1);
+  }
 
 
   std::cout << n << std::endl;

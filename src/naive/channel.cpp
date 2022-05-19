@@ -96,6 +96,23 @@ bool channel::runInstance(int id)
   // io_lock.lock();
   // ofile << "Id: " << id << " run" << std::endl;
   // io_lock.unlock();
+  if(!old_process.empty() || !old_modified.empty())
+  {
+    garbage_lock.lock();
+    while(!old_process.empty())
+    {
+      std::vector<int> *old_p = old_process.front();
+      delete(old_p);
+      old_process.pop();
+    }
+    while(!old_modified.empty())
+    {
+      std::unordered_set<int> *old_m = old_modified.front();
+      delete(old_m);
+      old_modified.pop();
+    }
+    garbage_lock.unlock();
+  }
   if(!process_queue.empty()) // processes chain 
   {
     // io_lock.lock();
@@ -127,6 +144,10 @@ bool channel::runInstance(int id)
         // std::cerr << "Before deleting q" << std::endl;
         // delete q;
         // std::cerr << "After deleting q" << std::endl;
+        garbage_lock.lock();
+        old_process.push(old);
+        old_modified.push(q);
+        garbage_lock.unlock();
         modified_queue.pop();
         process_queue.pop();
         old = tolook;

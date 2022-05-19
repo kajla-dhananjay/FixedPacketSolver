@@ -73,13 +73,31 @@ data *init()
 
   graph *g = input_graph();
 
+  // std::ofstream outfile;
+  // outfile.open("output.txt");
+  // outfile << g->n << " " << g->m << std::endl;
+  // for(auto it : g->edges)
+  // {
+  //   outfile << std::get<0>(it) << " " << std::get<1>(it) << " " << std::get<2>(it) << std::endl;
+  // }
+
   // std::cerr << "Graph Input Completed" << std::endl;
 
   std::vector<double> *b = input_b();
 
+  // outfile << (*b).size() << std::endl;
+  // for(auto it : (*b))
+  // {
+  //   outfile << it << std::endl;
+  // }
+
   // std::cerr << "b Input Completed" << std::endl;
 
   double e = input_eps();
+
+  // std::cerr << "Epsilon: " << e << "\nB size: " << (*b).size() << "\nn: " << g->n << std::endl;
+
+  // outfile << e << std::endl;
 
   // std::cerr << "eps Input Completed" << std::endl;
 
@@ -89,7 +107,7 @@ data *init()
   e /= ((double)g->n);
   // e /= ((double)g->n);
   
-  //e = 0.000000001;
+  e = 0.0000001;
   
   data *dat = new data(g, b, e);
 
@@ -106,8 +124,11 @@ data *init()
 
 void end(channel *chan, data *dat)
 {
+  // std::cerr << "End Started" << std::endl;
   std::vector<double> x = chan->getMu();
+  // std::cerr << "Got getMu" << std::endl;
   int iterations = chan->getT();
+  // std::cerr << "Got iterations" << std::endl;
 
   // std::cout << "Final average occupancies: " << std::endl;
 
@@ -145,7 +166,7 @@ void end(channel *chan, data *dat)
   }
   
 
-  //std::cout << "Final Result: " << std::endl;
+  // std::cout << "Final Result: " << std::endl;
 
   // for(auto it : x)
   // {
@@ -193,15 +214,15 @@ int main()
 
   srand(time(0));
 
-  std::cerr << "Start" << std::endl;
+  // std::cerr << "Start" << std::endl;
 
   data *dat = init();
 
-  std::cerr << "Init Done" << std::endl;
+  // std::cerr << "Init Done" << std::endl;
 
   channel *chan = runChain(dat);
 
-  std::cerr << "runChain Done" << std::endl;
+  // std::cerr << "runChain Done" << std::endl;
 
   end(chan, dat);
 
