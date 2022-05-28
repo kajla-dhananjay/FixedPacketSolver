@@ -79,9 +79,7 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<
   }
 
   head_modified = new std::unordered_set<int>();
-
-  tm = new indexedSet<double>(n); // Initialize the indexed set
-
+  // std::cout << "Initial max time: " << tm->getMax() << std::endl;
 }
 
 /**
@@ -96,8 +94,14 @@ bool channel::runInstance(int id)
   // io_lock.lock();
   // ofile << "Id: " << id << " run" << std::endl;
   // io_lock.unlock();
+  // io_lock.lock();
+  // std::cout << "runInstance Started at: " << id << std::endl;
+  // io_lock.unlock();
   if(!old_process.empty() || !old_modified.empty())
   {
+    // io_lock.lock();
+    // std::cout << "runInstance of: " << id << " at garbage cleaning" << std::endl;
+    // io_lock.unlock();
     garbage_lock.lock();
     while(!old_process.empty())
     {
@@ -115,6 +119,9 @@ bool channel::runInstance(int id)
   }
   if(!process_queue.empty()) // processes chain 
   {
+    // io_lock.lock();
+    // std::cout << "runInstance of: " << id << " at process queue" << std::endl;
+    // io_lock.unlock();
     // io_lock.lock();
     // ofile << "Id: " << id << " run to process" << std::endl;
     // io_lock.unlock();
@@ -154,8 +161,10 @@ bool channel::runInstance(int id)
         // io_lock.lock();
         // ofile << "Queue popped by id: " << id << std::endl;
         // io_lock.unlock();
-        if(tm->getMax() <= T * D)
+        double z = tm->getMax();
+        if(z <= T * D)
         {
+          // std::cout << "Max Time: " << z << ", time now: " << T * D << std::endl;
           isDone = true;
           // io_lock.lock();
           // ofile << "Done" << std::endl;
@@ -177,10 +186,16 @@ bool channel::runInstance(int id)
 
         process_lock.unlock();
 
+        // io_lock.lock();
+        // std::cout << v << ": Old mu " << mu[v];
+
         double r = mu[v] * ot + oq * (nt - ot -1) + nq;
         r /= (double) nt;
 
         mu[v] = r;
+
+        // std::cout << " | New mu " << mu[v] << std::endl;
+        // io_lock.unlock();
 
         double disc = 4 * std::fabs(nq - mu[v]) * nt;
         disc /= eps;
@@ -192,7 +207,10 @@ bool channel::runInstance(int id)
         L[v] = T;
 
         tm_lock.lock();
-        tm->setVal(v, ceil(tim));
+        // std::cout << "Max Time before: " << tm->getMax() << std::endl;
+        // std::cout << "Vertex updated: " << v << " with before val: " << tm->getVal(v) << " to val: " << ceil(tim) << std::endl;
+        tm->setVal(v, std::max((double)500, ceil(tim)));
+        // std::cout << "Max Time after: " << tm->getMax() << std::endl;
         tm_lock.unlock();
 
       }
@@ -202,14 +220,31 @@ bool channel::runInstance(int id)
   else // runs chain
   {
     // io_lock.lock();
+    // std::cout << "runInstance of: " << id << " at run chain at time " << T << std::endl;
+    // io_lock.unlock();
+    // io_lock.lock();
     // ofile << "Id: " << id << " run to run Chain" << std::endl;
     // io_lock.unlock();
     update_lock.lock();
 
+    // io_lock.lock();
+    // std::cout << "runInstance of: " << id << " got update_lock" << std::endl;
+    // io_lock.unlock();
+
     int chain_no = val_chain++;
+
+    // io_lock.lock();
+    // std::cout << "runInstance of: " << id << " increased val_chain" << std::endl;
+    // io_lock.unlock();
     if(val_chain <= D)
     {
+      // io_lock.lock();
+      // std::cout << "runInstance of: " << id << " at val_chain <= D" << std::endl;
+      // io_lock.unlock();
       update_lock.unlock();
+      // io_lock.lock();
+      // std::cout << "runInstance of: " << id << " released update lock" << std::endl;
+      // io_lock.unlock();
       int pre_vertex = chain_pos[chain_no];
       int post_vertex = distSelector(CP[pre_vertex]);
 
@@ -229,13 +264,23 @@ bool channel::runInstance(int id)
       // ofile << "Val_chain: " << val_chain << ", chains_run: " << chains_run << std::endl;
       // io_lock.unlock();
       chains_run++;
+      // io_lock.lock();
+      // std::cout << "runInstance of: " << id << " at val_chain <= D completed" << std::endl;
+      // io_lock.unlock();
       mod_lock.unlock();
     }
     else
     {
-      while(chains_run < D)
+      // io_lock.lock();
+      // std::cout << "runInstance of: " << id << " at val_chain == D" << std::endl;
+      // io_lock.unlock();
+      if(chains_run < D)
       {
-        continue;
+        update_lock.unlock();
+        // io_lock.lock();
+        // std::cout << "runInstance of: " << id << " released update lock and returned" << std::endl;
+        // io_lock.unlock();
+        return isDone;
       }
       // io_lock.lock();
       // ofile << "Tid: " << id << " Chain_Reset" << std::endl;
@@ -253,6 +298,9 @@ bool channel::runInstance(int id)
       val_chain = 0;
       chains_run = 0;
       update_lock.unlock();
+      // io_lock.lock();
+      // std::cout << "runInstance of: " << id << " released update lock" << std::endl;
+      // io_lock.unlock();
     }
 
     return isDone;

@@ -60,14 +60,31 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
   return {maxo,maxv};
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+  if(argc != 5)
+  {
+    std::cout << "Bad number of arguments: " << argc-1 << ", expected 4 arguments." << std::endl;
+    for(int i = 0; i < argc; i++)
+    {
+      std::cout << std::string(argv[i]) << std::endl;
+    }
+    return 1;
+  }
+  std::string input_file = std::string(argv[1]);
+  std::string graph_file = std::string(argv[2]);
+  std::string coordinates_file = std::string(argv[3]);
+  int ns = std::stoi(std::string(argv[4]));
+  std::ifstream inf(input_file.c_str());
+  std::ofstream gf, cf;
+  gf.open(graph_file.c_str());
+  cf.open(coordinates_file.c_str());
   std::string s;
-  std::getline(std::cin, s);
+  std::getline(inf, s);
   int n = 0,m = 0;
   std::vector<std::tuple<int, int, double> > edges;
   int a,b;
-  while(std::cin >> a >> b)
+  while(inf >> a >> b)
   {
     double c=1;
     n = std::max(n, std::max(a,b));
@@ -124,20 +141,19 @@ int main()
       new_edges.push_back(std::make_tuple(mppp[a], mppp[b], std::get<2>(it)));
     }
   }
-  std::cout << new_n << " " << new_edges.size() << std::endl;
+  gf << new_n << " " << new_edges.size() << std::endl;
   for(auto it : new_edges)
   {
-    std::cout << std::get<0>(it) << " " << std::get<1>(it) << " " << std::get<2>(it) << std::endl;
+    gf << std::get<0>(it) << " " << std::get<1>(it) << " " << std::get<2>(it) << std::endl;
   }
   //std::cerr << "| Edges = " << new_edges.size() << std::endl;
 
 
   n = new_n;
-  int r = n/2;
   double z = 0;
   std::vector<double> v; // r to n 
   int t = 0;
-  int num_sources = std::min(40,n-1); // r to n
+  int num_sources = std::min(ns,n-1); // r to n
   for(; t < num_sources; t++)
   {
     double q = 1;
@@ -160,12 +176,11 @@ int main()
   }
 
 
-  std::cout << n << std::endl;
+  cf << n << std::endl;
   for(auto it : v)
   {
-    std::cout << it << std::endl;
+    cf << it << std::endl;
   }
-
-
-  std::cout << "0.1123" << std::endl;
+  gf.close();
+  cf.close();
 }

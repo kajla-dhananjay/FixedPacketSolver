@@ -61,7 +61,7 @@ channel* runChain(data *dat)
 
   int num_threads = dat->d;
 
-  num_threads = 5;
+  num_threads = 8;
 
   for(int i = 0; i < num_threads; i++)
   {

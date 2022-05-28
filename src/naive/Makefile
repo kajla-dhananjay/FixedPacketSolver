@@ -1,38 +1,50 @@
-all: formatter NaivePLW
+.PHONY: all formatter NaivePLW NaivePLW_dbg analyser
 
+CC = g++
 
-chain: chain.cpp
-	g++ -Wall -c chain.cpp -o chain.o
+CFLAGS = -Wall 
+PTHREADFLAG = -pthread
 
-channel: channel.cpp
-	g++ -Wall -c channel.cpp -o channel.o
+all: formatter NaivePLW analyser
 
-checkers: checkers.cpp
-	g++ -Wall -c checkers.cpp -o checkers.o
+chain.o: chain.cpp
+	${CC} ${CFLAGS} -c chain.cpp -o chain.o
 
-data: data.cpp
-	g++ -Wall -c data.cpp -o data.o
+channel.o: channel.cpp
+	${CC} ${CFLAGS} -c channel.cpp -o channel.o
 
-distSelector: distSelector.cpp
-	g++ -Wall -c distSelector.cpp -o distSelector.o
+checkers.o: checkers.cpp
+	${CC} ${CFLAGS} -c checkers.cpp -o checkers.o
 
-errorHandler: errorHandler.cpp
-	g++ -Wall -c errorHandler.cpp -o errorHandler.o
+data.o: data.cpp
+	${CC} ${CFLAGS} -c data.cpp -o data.o 
+
+distSelector.o: distSelector.cpp
+	${CC} ${CFLAGS} -c distSelector.cpp -o distSelector.o
+
+errorHandler.o: errorHandler.cpp
+	${CC} ${CFLAGS} -c errorHandler.cpp -o errorHandler.o
 
 formatter: formatter.cpp
-	g++ -o formatter formatter.cpp
+	${CC} -o formatter formatter.cpp
 
-indexedSet: indexedSet.cpp 
-	g++ -Wall -c indexedSet.cpp -o indexedSet.o
+indexedSet.o: indexedSet.cpp 
+	${CC} ${CFLAGS} -c indexedSet.cpp -o indexedSet.o
 
-linalg: linalg.cpp 
-	g++ -Wall -c linalg.cpp -o linalg.o
+linalg.o: linalg.cpp 
+	${CC} ${CFLAGS} -c linalg.cpp -o linalg.o
 
-NaivePLW: NaivePLW.cpp chain channel checkers data distSelector errorHandler indexedSet linalg
-	g++ -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o -pthread
+NaivePLW: NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CC} ${CFLAGS} -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
 
-dbg: NaivePLW.cpp chain channel checkers data distSelector errorHandler indexedSet linalg
-	g++ -g -Wall -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o -pthread
+NaivePLW_dbg: NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CC} -g ${CFLAGS} -o NaivePLW_dbg NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
+
+converter: converter.cpp data.o checkers.o errorHandler.o
+	${CC} ${CFLAGS} -o converter converter.cpp data.o checkers.o errorHandler.o
+
+analyser: analyser.cpp data.o checkers.o errorHandler.o linalg.o
+	${CC} ${CFLAGS} -o analyser analyser.cpp data.o checkers.o errorHandler.o linalg.o
 
 clean:
-	rm -rf formatter NaivePLW *.txt *.o
+	rm -rf formatter NaivePLW *.txt *.o *.out NaivePLW_dbg converter analyser

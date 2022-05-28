@@ -3,18 +3,30 @@
 
 #include<bits/stdc++.h>
 
+class laplacian;
+
 class graph{
 public:
     int n;
     int m;
-    std::vector<std::tuple<int, int, int> > edges;
+    std::vector<std::tuple<int, int, double> > edges;
     graph();
+    graph(laplacian *l);
 };
 
 class laplacian{
+private:
+    std::vector<std::vector<double> > L;
 public:
-    std::vector<std::vector<int> > L;
-    std::vector<std::vector<int> > b;
+    laplacian();
+    laplacian(graph *g);
+    laplacian(std::vector<std::vector<double> > l);
+    std::vector<std::vector<double> > getL();
+};
+
+class vec{
+public:
+    std::vector<double> b;
 };
 
 class data{
@@ -40,7 +52,7 @@ public:
     // std::vector<std::vector<double> > L; ///< Graph Laplacian [Optional]
 
     data();
-    data(graph *g, std::vector<double> *v, double e);
+    data(graph *g, std::vector<double> *v, double e, int dd=5);
 };
 
 #endif /* BC291FBE_75E9_4E26_89CD_75989319BA00 */

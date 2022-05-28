@@ -8,17 +8,62 @@ graph::graph()
 
 }
 
+graph::graph(laplacian *l)
+{
+  std::vector<std::vector<double> > ll = l->getL();
+  n = ll.size();
+  edges.clear();
+  for(int i = 0; i < n; i++)
+  {
+    for(int j = i+1; j < n; j++)
+    {
+      if(abs(ll[i][j]) > 0.0000001)
+      edges.push_back({i, j, ll[i][j]});
+    }
+  }
+  m = edges.size();
+}
+
+laplacian::laplacian()
+{
+
+}
+
+laplacian::laplacian(std::vector<std::vector<double> > l)
+{
+  L = l;
+}
+
+laplacian::laplacian(graph *g)
+{
+  L.resize(g->n, std::vector<double>(g->n, 0));
+  std::vector<double> D(g->n);
+  for(auto it : g->edges)
+  {
+    L[std::get<0>(it)][std::get<1>(it)] = -1 * std::get<2>(it);
+    L[std::get<1>(it)][std::get<0>(it)] = -1 * std::get<2>(it);
+    L[std::get<0>(it)][std::get<0>(it)] += std::get<2>(it);
+    L[std::get<1>(it)][std::get<1>(it)] += std::get<2>(it);
+  }
+}
+    
+std::vector<std::vector<double> > laplacian::getL()
+{
+  return L;
+}
+
 data::data()
 {
 
 }
 
-data::data(graph *g, std::vector<double> *v, double e)
+data::data(graph *g, std::vector<double> *v, double e, int dd)
 {
     // std::cerr << "Graph Input BP-1" << std::endl;
 
     this->n = g->n;
     this->m = g->m;
+    this->d = dd;
 
     this->Cum_P.resize(this->n); // Initialize Cumulative Transition Matrix
 
@@ -131,3 +176,4 @@ data::data(graph *g, std::vector<double> *v, double e)
 
   this->eps = e;
 }
+
