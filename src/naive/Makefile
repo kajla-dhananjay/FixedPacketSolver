@@ -5,7 +5,7 @@ CXXFLAGS  = -Wall
 PTHREADFLAG = -pthread
 UTIL_FILES = chain channel checkers data distSelector errorHandler indexedSet linalg 
 
-all: formatter NaivePLW analyser
+all: NaivePLW analyser
 
 $(UTIL_FILES).o:
 	$(CXX) ${CXXFLAGS} -c $(UTIL_FILES).c -o $(UTIL_FILES).o
