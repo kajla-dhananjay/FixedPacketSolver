@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "building solver"
-# make > /dev/null
+make > /dev/null
 echo "build complete"
 rm -rf input.txt
 x=${1:-5}
@@ -16,7 +16,7 @@ echo "running solver"
 ./NaivePLW input_g.txt input_b.txt oc.txt ol.txt "${d}" "${e}"
 echo "solver run complete"
 echo "building analyser"
-# make analyser > /dev/null
+make analyser > /dev/null
 echo "analyser built"
 echo "running analysis"
 ./analyser input_g.txt input_b.txt oc.txt ol.txt "${d}" "${e}" "${dat_out}"

@@ -2,7 +2,7 @@
 #include "data.h"
 #include "linalg.h"
 
-#define DEBUG
+// #define DEBUG
 
 using namespace std;
 

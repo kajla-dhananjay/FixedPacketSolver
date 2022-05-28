@@ -1,2 +1,4 @@
+.gitignore
+.vscode
 src/naive/.vscode
 src/naive/.ignored
