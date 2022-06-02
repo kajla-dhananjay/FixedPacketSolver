@@ -1,23 +1,24 @@
-.PHONY: all formatter NaivePLW NaivePLW_dbg analyser clean
+.PHONY: all clean
 
 CXX = g++
 CXXFLAGS  = -Wall
 PTHREADFLAG = -pthread
-UTIL_FILES = chain channel checkers data distSelector errorHandler indexedSet linalg 
+UTIL_FILES = chain channel checkers data distSelector errorHandler indexedSet linalg NaivePLW
+UTIL_OBJS = chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o NaivePLW.o
 
-all: NaivePLW analyser
+all: plw analyser formatter
 
-$(UTIL_FILES).o:
-	$(CXX) ${CXXFLAGS} -c $(UTIL_FILES).c -o $(UTIL_FILES).o
+$(UTIL_OBJS): %.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 formatter: formatter.cpp
 	${CXX} -o formatter formatter.cpp
 
-NaivePLW: NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
-	${CXX} ${CXXFLAGS} -o NaivePLW NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
+plw: plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CXX} ${CXXFLAGS} -o plw plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
 
-NaivePLW_dbg: NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
-	${CXX} -g ${CXXFLAGS} -o NaivePLW_dbg NaivePLW.cpp chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
+plw_dbg: plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CXX} ${CXXFLAGS} -o plw_dbg plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
 
 converter: converter.cpp data.o checkers.o errorHandler.o
 	${CXX} ${CXXFLAGS} -o converter converter.cpp data.o checkers.o errorHandler.o
@@ -26,4 +27,4 @@ analyser: analyser.cpp data.o checkers.o errorHandler.o linalg.o
 	${CXX} ${CXXFLAGS} -o analyser analyser.cpp data.o checkers.o errorHandler.o linalg.o
 
 clean:
-	rm -rf formatter NaivePLW *.txt *.o *.out NaivePLW_dbg converter analyser
+	rm -rf formatter plw *.txt *.o *.out plw_dbg converter analyser

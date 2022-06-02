@@ -13,7 +13,7 @@ echo "generating input"
 ./formatter  ../../data/data${x} input_g.txt input_b.txt "${b}"
 echo "input generated"
 echo "running solver"
-./NaivePLW input_g.txt input_b.txt oc.txt ol.txt "${d}" "${e}"
+./plw input_g.txt input_b.txt oc.txt ol.txt "${d}" "${e}"
 echo "solver run complete"
 echo "building analyser"
 make analyser > /dev/null

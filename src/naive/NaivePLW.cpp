@@ -12,7 +12,6 @@
 /************************* Standard libraries Import **************************/
 
 #include<bits/stdc++.h>
-#include<fstream>
 
 // Compilation Flag Macros : DEBUG
 
@@ -120,166 +119,105 @@ data *init(std::string graph_in, std::string b_in, int dd, double e)
  * 
  */
 
-void end(channel *chan, data *dat, std::ofstream &oc, std::ofstream &ol, std::vector<double> &p)
+void end(std::ofstream &oc, std::ofstream &ol, const std::vector<double> &p)
 {
   std::chrono::duration<double> diff = t1 - t0;
   double timev = diff.count();
 
-
-  // std::cerr << "End Started" << std::endl;
-  std::vector<double> x = chan->getMu();
-  // std::cerr << "Got getMu" << std::endl;
-  // int iterations = chan->getT();
-  // std::cout << "Total Iterations: " << iterations << std::endl;
-  // std::cerr << "Got iterations" << std::endl;
-
-  // std::cout << "Final average occupancies: " << std::fixed << std::setprecision(5) << std::endl;
-
-  // for(int i = 0; i < (int)x.size(); i++)
-  // {
-  //   std::cout << i << ' ' << x[i] << std::endl;
-  // }
-
-  // std::cout << dat->u << std::endl;
-
-  // std::cout << dat->D.size() << std::endl;
-  // for(auto it : dat->D)
-  // {
-  //   std::cout << it << std::endl;
-  // }
-
-  double sumv = 0;
-
-  for(int i = 0; i < (int)x.size(); i++)
-  {
-    if(i == dat->u)
-    {
-      continue;
-    }
-    double q = x[i];
-    q /= dat->D[i];
-    sumv += q;
-  }
-
-  double uus = x[dat->u];
-
-  // std::cout << "Final Solution: " << std::endl;
-
-
-  for(int i = 0; i < (int)x.size(); i++)
-  {
-    if(i == dat->u)
-    {
-      p[i] = -1.0 * dat->sb;
-      p[i] /= dat->n;
-      p[i] /= uus;
-      p[i] *= sumv;
-    }
-    else 
-    {
-      p[i] = dat->sb;
-      p[i] /= uus;
-      double rr = x[i];
-      rr /= dat->D[i];
-      double ss = sumv;
-      ss /= dat->n;
-      rr -= ss;
-      p[i] *= rr;
-    }
-  }
-  
-
   oc << std::fixed << std::setprecision(5);
-
   oc << p.size() << std::endl;
 
   for(int i = 0; i < (int)p.size(); i++)
   {
     oc << p[i] << std::endl;
   }
+
   oc << std::endl;
-
   ol << timev << std::endl;
-
   return;
-
-  // #ifdef DEBUG
-
-  //  std::vector<double> Lx = matrix_vector_mult(dat->L, x);
-  //  std::vector<double> Lx_b = vector_addition(Lx, vector_scalar_mult(dat->b, -1.0));
-  //  std::cout << "L1 norm: " << l1_norm(Lx_b) << std::endl;
-  // std::cout << "L2 norm: " << l2_norm(Lx_b) << std::endl;
-  // std::cout << "Infinity norm: " << inf_norm(Lx_b) << std::endl;
-  //  std::cout << "L1 norm(normalized to b): " << l1_norm(Lx_b) / l1_norm(dat->b) << std::endl; 
-  // std::cout << "L1 norm(normalized to n): " << l1_norm(Lx_b) / n << std::endl; 
-  // std::cout << "L2 norm(normalized to b): " << l2_norm(Lx_b) / l2_norm(b) << std::endl;
-  // std::cout << "L2 norm(normalized to n): " << l2_norm(Lx_b) / n << std::endl;
-  // std::cout << "Infinity norm(normalized to b): " << inf_norm(Lx_b) / inf_norm(b) << std::endl;
-  // std::cout << "Infinity norm(normalized to n): " << inf_norm(Lx_b) / n << std::endl;
-  // std::cout << "Averaged L1 norm (L1 norm divided by n): " << l1_norm(Lx_b) / n  << std::endl; 
-  // std::cout << "Averaged L1 norm (L1 norm divided by n) (normalized to b): " << l1_norm(Lx_b) / (dat->n * l1_norm(dat->b)) << std::endl; 
-  // #endif
-
 }
 
-
-/**
- * @brief Main function
- * 
- * @return int Exit status of the program
- */
-
-int main(int argc, char *argv[])
+void solve(data *input, std::vector<double> &p)
 {
+  channel *chan = runChain(input);
 
-  /*****************************Fast I/O Optimization**************************/
+  std::vector<double> x = chan->getMu();
+  double uus = x[input->u];
+  
+  p.clear();
+  p.resize(x.size());
 
-  std::ios_base::sync_with_stdio(false);
-  std::cin.tie(NULL);
+  double sumv = 0;
 
-  /*****************************Program Start**********************************/
-
-  if(argc != 7)
+  for(int i = 0; i < (int)x.size(); i++)
   {
-    std::cout << "Expected 6 arguments, got: " << argc-1 << std::endl;
-    return 1;
+    if(i == input->u)
+    {
+      continue;
+    }
+    double q = x[i];
+    q /= input->D[i];
+    sumv += q;
   }
 
-  std::string in_graph = std::string(argv[1]);
-  std::string b = std::string(argv[2]);
-  std::string out_coord = std::string(argv[3]);
-  std::string out_logs = std::string(argv[4]);
-  int d = std::stoi(std::string(argv[5]));
-  double e = std::stod(std::string(argv[6]));
 
+
+  for(int i = 0; i < (int)x.size(); i++)
+  {
+    if(i == input->u)
+    {
+      p[i] = -1.0 * input->sb;
+      p[i] /= input->n;
+      p[i] /= uus;
+      p[i] *= sumv;
+    }
+    else 
+    {
+      p[i] = input->sb;
+      p[i] /= uus;
+      double rr = x[i];
+      rr /= input->D[i];
+      double ss = sumv;
+      ss /= input->n;
+      rr -= ss;
+      p[i] *= rr;
+    }
+  }
+
+  return;
+}
+
+void solver(std::string in_graph, std::string b, std::string out_coord, std::string out_logs, int d, double e)
+{
   std::ofstream oc, ol;
+
   oc.open(out_coord);
   ol.open(out_logs);
 
   srand(time(0));
 
-  // std::cerr << "Start" << std::endl;
-
-
   data *dat = init(in_graph, b, d, e);
 
-  std::vector<double> solution(dat->n);
+  std::vector<double> output(dat->n);
 
   t0 = std::chrono::high_resolution_clock::now();
-
-  // std::cerr << "Init Done" << std::endl;
-
-  channel *chan = runChain(dat);
-
-  // std::cerr << "runChain Done" << std::endl;
-
+  
+  solve(dat, output);
+  
   t1 = std::chrono::high_resolution_clock::now();
-
-
-  end(chan, dat, oc, ol, solution);
-
+  
+  end(oc, ol, output);
+  
   oc.close();
   ol.close();
-  // std::cerr << "End Done" << std::endl;
-
 }
+
+std::vector<double> solver(graph* g, std::vector<double> &b, int d, double e)
+{
+  srand(time(0));
+  data *dat = new data(g, &b, e, d);
+  std::vector<double> output(dat->n);
+  solve(dat, output);
+  return output;
+}
+
