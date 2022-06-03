@@ -5,7 +5,7 @@ authors:
     given-names: Dhananjay
   - family-names: Bagchi
     given-names: Amitabha
-  - family-names: Giliani
+  - family-names: Gilliani
     given-names: Iqra
 title: "Implementaiton of Laplacian solver using random walks paper"
 version: 2.0.0
