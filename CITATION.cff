@@ -6,7 +6,7 @@ authors:
   - family-names: Bagchi
     given-names: Amitabha
   - family-names: Gilliani
-    given-names: Iqra
+    given-names: I.A.
 title: "Implementaiton of Laplacian solver using random walks paper"
 version: 2.0.0
 # doi: 10.5281/zenodo.1234
