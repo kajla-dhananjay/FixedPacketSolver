@@ -1,9 +1,9 @@
 /**
  * @file channel.cpp
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
- * @brief Channel Data structure which acts as a central information gathering mechanism
+ * @brief Channel data structure to fecilitate running of the chain
  * @version 2.0
- * @date 2021-2-5
+ * @date 2021-05-29
  * 
  * @copyright Copyright (c) 2022
  * 
@@ -32,31 +32,27 @@ channel::channel()
  * @param d Number of chains
  * @param e Error bound
  * @param x Initial position of chains
- * @param p probability of assigning a thread to process the queue
 */
 
 
-channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<std::vector<std::pair<double, int> > > &cp, double pr)
+channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<std::vector<std::pair<double, int> > > &cp)
 {
-  ofile.open("channel_logs.txt");
+  isDone = false; //!< Initialize isdone to false
+  eps = e; //!< Initialize error margin
+  T = 1; //!< Initialize global clock to 1
+  D = d; //!< Initialize number of chains
+  val_chain = 0; //!< increments the moment the thread starts running a chain
+  chains_run = 0; //!< increments the moment the thread is done running the chain
+  max_queue_size = 10; //!< Maximum queue size before which all threads are sent to processing
 
-  isDone = false; // Initialize isdone to false
-  eps = e; // Initialize error margin
-  p = pr; // Initialize probability of processing
-  T = 1; // Initialize global clock to 1
-  D = d; // Initialize number of chains
-  val_chain = 0;
-  chains_run = 0;
-  max_queue_size = 10;
+  CP = cp; //!< Cumulative transition matrix
 
-  CP = cp;
-
-  L.resize(n,0); // Initialize last seen for each vertex
-  mu.resize(n, 0); // Initialize average occupancy at each vertex
+  L.resize(n,0); //!< Initialize last seen for each vertex
+  mu.resize(n, 0); //!< Initialize average occupancy at each vertex
 
   std::vector<int> r(n,0);
 
-  tm = new indexedSet<double>(n);
+  tm = new indexedSet<double>(n); //!< Keeps track of all termination timers
 
   for(auto it : x)
   {
@@ -64,46 +60,31 @@ channel::channel(int n, int s, int d, double e, std::vector<int> x, std::vector<
     tm->setVal(it, INT_MAX); // Set timer of occupied vertices to infinity
   }
   
-  old = new std::vector<int>();
-  head = new std::vector<int>();
+  old = new std::vector<int>(); //!< Special pointer to keep track of the most recently pushed out vector
+  head = new std::vector<int>(); //!< Keeps track of the head of runner threads
 
   *old = r;
   *head = r;
 
   chain_pos = x;
 
-  std::vector<int> rrr((*head).size());
-  for(int i = 0; i < D; i++)
-  {
-    rrr[chain_pos[i]]++;
-  }
-
-  head_modified = new std::unordered_set<int>();
-  // std::cout << "Initial max time: " << tm->getMax() << std::endl;
+  head_modified = new std::unordered_set<int>(); //!< Keeps track of modified vertices at each iteration
 }
 
 /**
  * @brief Indicates whether a particular chain is allowed to push an update
  * 
  * If a chain already has an update in the queue then that chain will be denied
+ * @param id Id of the thread running the chain (passed for debugging purposes)
  * @return chain number of a valid chain to run
  * @return -1 if the thread can exit
  */
 bool channel::runInstance(int id)
 {
-  // io_lock.lock();
-  // ofile << "Id: " << id << " run" << std::endl;
-  // io_lock.unlock();
-  // io_lock.lock();
-  // std::cout << "runInstance Started at: " << id << std::endl;
-  // io_lock.unlock();
-  if(!old_process.empty() || !old_modified.empty())
+  if(!old_process.empty() || !old_modified.empty()) //!< If there's garbage to free, the thread will free it up first
   {
-    // io_lock.lock();
-    // std::cout << "runInstance of: " << id << " at garbage cleaning" << std::endl;
-    // io_lock.unlock();
-    garbage_lock.lock();
-    while(!old_process.empty())
+    garbage_lock.lock(); //!< Accquiring garbage lock
+    while(!old_process.empty()) 
     {
       std::vector<int> *old_p = old_process.front();
       delete(old_p);
@@ -115,22 +96,17 @@ bool channel::runInstance(int id)
       delete(old_m);
       old_modified.pop();
     }
-    garbage_lock.unlock();
+    garbage_lock.unlock(); //!< Releasing garbage lock
   }
-  if(!process_queue.empty()) // processes chain 
+
+  if(!process_queue.empty()) //!< If there's something to process, the thread will processes the chain 
   {
-    // io_lock.lock();
-    // std::cout << "runInstance of: " << id << " at process queue" << std::endl;
-    // io_lock.unlock();
-    // io_lock.lock();
-    // ofile << "Id: " << id << " run to process" << std::endl;
-    // io_lock.unlock();
-    process_lock.lock();
-    queue_lock.lock();
+    process_lock.lock(); //!< Accquire process lock to keep other threads from processing and changing queue information 
+    queue_lock.lock(); //!< Lock the queue to keep sync
     bool aa = process_queue.empty();
     bool bb = modified_queue.empty();
-    queue_lock.unlock();
-    if(aa && bb)
+    queue_lock.unlock(); //!< Unlock the queue
+    if(aa && bb) //!< If there's nothing to process
     {
       process_lock.unlock();
       return isDone;
@@ -145,37 +121,24 @@ bool channel::runInstance(int id)
       std::unordered_set<int> *q = modified_queue.front();
       if(q->empty())
       {
-        // std::cerr << "Before deleting old" << std::endl;
-        // delete old;
-        // std::cerr << "After deleting old" << std::endl;
-        // std::cerr << "Before deleting q" << std::endl;
-        // delete q;
-        // std::cerr << "After deleting q" << std::endl;
-        garbage_lock.lock();
+        garbage_lock.lock(); //!< Accquire garbage lock to push redundant memory pointers in the trash
         old_process.push(old);
         old_modified.push(q);
-        garbage_lock.unlock();
+        garbage_lock.unlock(); //!< Unlock garbage lock
         modified_queue.pop();
         process_queue.pop();
         old = tolook;
-        // io_lock.lock();
-        // ofile << "Queue popped by id: " << id << std::endl;
-        // io_lock.unlock();
         double z = tm->getMax();
-        if(z <= T * D)
+        if(z <= T * D) //!< All timers have expired
         {
-          // std::cout << "Max Time: " << z << ", time now: " << T * D << std::endl;
           isDone = true;
-          // io_lock.lock();
-          // ofile << "Done" << std::endl;
-          // io_lock.unlock();
         }
         T++;
         process_lock.unlock();
       }
       else 
       {
-        int v = *((*q).begin());
+        int v = *((*q).begin()); //!< Vertex to process
 
         q->erase(q->begin());
 
@@ -186,16 +149,10 @@ bool channel::runInstance(int id)
 
         process_lock.unlock();
 
-        // io_lock.lock();
-        // std::cout << v << ": Old mu " << mu[v];
-
         double r = mu[v] * ot + oq * (nt - ot -1) + nq;
         r /= (double) nt;
 
         mu[v] = r;
-
-        // std::cout << " | New mu " << mu[v] << std::endl;
-        // io_lock.unlock();
 
         double disc = 4 * std::fabs(nq - mu[v]) * nt;
         disc /= eps;
@@ -204,47 +161,23 @@ bool channel::runInstance(int id)
         double tim = 1 + sqrt(disc);
         tim /= 2;
 
-        L[v] = T;
+        L[v] = T; //!< Update Last seen
 
         tm_lock.lock();
-        // std::cout << "Max Time before: " << tm->getMax() << std::endl;
-        // std::cout << "Vertex updated: " << v << " with before val: " << tm->getVal(v) << " to val: " << ceil(tim) << std::endl;
-        tm->setVal(v, std::max((double)500, ceil(tim)));
-        // std::cout << "Max Time after: " << tm->getMax() << std::endl;
+        tm->setVal(v, std::max((double)500, ceil(tim))); //!< Update termination timer with 500 as a reserve time
         tm_lock.unlock();
 
       }
     }
     return isDone;
   }
-  else // runs chain
+  else
   {
-    // io_lock.lock();
-    // std::cout << "runInstance of: " << id << " at run chain at time " << T << std::endl;
-    // io_lock.unlock();
-    // io_lock.lock();
-    // ofile << "Id: " << id << " run to run Chain" << std::endl;
-    // io_lock.unlock();
     update_lock.lock();
-
-    // io_lock.lock();
-    // std::cout << "runInstance of: " << id << " got update_lock" << std::endl;
-    // io_lock.unlock();
-
     int chain_no = val_chain++;
-
-    // io_lock.lock();
-    // std::cout << "runInstance of: " << id << " increased val_chain" << std::endl;
-    // io_lock.unlock();
     if(val_chain <= D)
     {
-      // io_lock.lock();
-      // std::cout << "runInstance of: " << id << " at val_chain <= D" << std::endl;
-      // io_lock.unlock();
       update_lock.unlock();
-      // io_lock.lock();
-      // std::cout << "runInstance of: " << id << " released update lock" << std::endl;
-      // io_lock.unlock();
       int pre_vertex = chain_pos[chain_no];
       int post_vertex = distSelector(CP[pre_vertex]);
 
@@ -257,34 +190,16 @@ bool channel::runInstance(int id)
       head_modified->insert(post_vertex);
 
       chain_pos[chain_no] = post_vertex;
-
-
-      // io_lock.lock();
-      // ofile << "Id: " << id << " Chain: " << chain_no << " moved from " << pre_vertex << " to " << post_vertex << std::endl;
-      // ofile << "Val_chain: " << val_chain << ", chains_run: " << chains_run << std::endl;
-      // io_lock.unlock();
       chains_run++;
-      // io_lock.lock();
-      // std::cout << "runInstance of: " << id << " at val_chain <= D completed" << std::endl;
-      // io_lock.unlock();
       mod_lock.unlock();
     }
     else
     {
-      // io_lock.lock();
-      // std::cout << "runInstance of: " << id << " at val_chain == D" << std::endl;
-      // io_lock.unlock();
       if(chains_run < D)
       {
         update_lock.unlock();
-        // io_lock.lock();
-        // std::cout << "runInstance of: " << id << " released update lock and returned" << std::endl;
-        // io_lock.unlock();
         return isDone;
       }
-      // io_lock.lock();
-      // ofile << "Tid: " << id << " Chain_Reset" << std::endl;
-      // io_lock.unlock();
       queue_lock.lock();
       process_queue.push(head);
       modified_queue.push(head_modified);
@@ -298,9 +213,6 @@ bool channel::runInstance(int id)
       val_chain = 0;
       chains_run = 0;
       update_lock.unlock();
-      // io_lock.lock();
-      // std::cout << "runInstance of: " << id << " released update lock" << std::endl;
-      // io_lock.unlock();
     }
 
     return isDone;

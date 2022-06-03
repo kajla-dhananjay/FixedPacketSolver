@@ -1,9 +1,23 @@
+/**
+ * @file converter.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief Converts graphs to laplacians and vice versa
+ * @version 2.0
+ * @date 2021-05-29
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include<bits/stdc++.h>
 #include "data.h"
 using namespace std;
 std::ifstream reader;
 std::ofstream writer;
 
+/**
+ * @brief Reads graph in the format as specified in the documentation
+ * @return Pointer to a graph object
+ */
 graph *read_graph()
 {
   graph *g = new graph();
@@ -21,6 +35,10 @@ graph *read_graph()
   return g;
 }
 
+/**
+ * @brief Writes graph to a file
+ * @param graph* Pointer to a graph object
+ */
 void write_graph(graph *g)
 {
   writer << g->n << " " << g->m << std::endl;
@@ -30,6 +48,10 @@ void write_graph(graph *g)
   }
 }
 
+/**
+ * @brief Reads laplacian in the format as specified in the documentation
+ * @return Pointer to a laplacian object
+ */
 laplacian *read_laplacian()
 {
   int n;
@@ -46,6 +68,10 @@ laplacian *read_laplacian()
   return l;
 }
 
+/**
+ * @brief Writes laplacian to a file
+ * @param laplacian* Pointer to a laplacian object(matrix)
+ */
 void write_laplacian(laplacian *l)
 {
   std::vector<std::vector<double> > v = l->getL();

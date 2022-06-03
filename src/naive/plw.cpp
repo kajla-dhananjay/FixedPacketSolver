@@ -1,5 +1,16 @@
+/**
+ * @file plw.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief Main file for One-sink Laplacian Solver Using Random Walks
+ * @version 1.0
+ * @date 2021-2-5
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include <bits/stdc++.h>
-#include "NaivePLW.h"
+#include "solver.h"
+
 /**
  * @brief Main function
  * 

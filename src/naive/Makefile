@@ -3,8 +3,8 @@
 CXX = g++
 CXXFLAGS  = -Wall
 PTHREADFLAG = -pthread
-UTIL_FILES = chain channel checkers data distSelector errorHandler indexedSet linalg NaivePLW
-UTIL_OBJS = chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o NaivePLW.o
+UTIL_FILES = chain channel checkers data distSelector errorHandler indexedSet linalg solver
+UTIL_OBJS = chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o solver.o
 
 all: plw analyser formatter
 
@@ -14,11 +14,11 @@ $(UTIL_OBJS): %.o: %.cpp
 formatter: formatter.cpp
 	${CXX} -o formatter formatter.cpp
 
-plw: plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
-	${CXX} ${CXXFLAGS} -o plw plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
+plw: plw.cpp solver.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CXX} ${CXXFLAGS} -o plw plw.cpp solver.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
 
-plw_dbg: plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
-	${CXX} ${CXXFLAGS} -o plw_dbg plw.cpp NaivePLW.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
+plw_dbg: plw.cpp solver.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o
+	${CXX} ${CXXFLAGS} -o plw_dbg plw.cpp solver.o chain.o channel.o checkers.o data.o distSelector.o errorHandler.o indexedSet.o linalg.o ${PTHREADFLAG}
 
 converter: converter.cpp data.o checkers.o errorHandler.o
 	${CXX} ${CXXFLAGS} -o converter converter.cpp data.o checkers.o errorHandler.o

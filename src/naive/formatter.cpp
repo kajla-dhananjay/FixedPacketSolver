@@ -1,24 +1,48 @@
+/**
+ * @file formatter.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief Utility file that formats raw graph into required format for the graph and b.
+ * @version 2.0
+ * @date 2021-05-29
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include<bits/stdc++.h>
 
-void DFS(int node, int color_val, std::vector<std::set<int> > &adj_list, std::vector<int> &color, std::unordered_map<int, int> &colormap)
+/**
+ * @brief DFS to color all connected componenets
+ * 
+ * @param node Current node
+ * @param color_val Color to paint the vertex
+ * @param adj_list Adjacency matrix for the given vertices
+ * @param color Color of all vertices
+ */
+
+void DFS(int node, int color_val, std::vector<std::set<int> > &adj_list, std::vector<int> &color)
 {
   if(color[node] != -1)
   {
-    return; // Node already colored
+    return; //!< Node already colored
   }
 
-  color[node] = color_val; // color of node is color_val
+  color[node] = color_val; //!< color of node is color_val
 
   for(auto it : adj_list[node])
   {
     if(color[it] != -1)
     {
-      continue; // Node already colored
+      continue; //!< Node already colored
     }
-    DFS(it, color_val, adj_list, color, colormap);
+    DFS(it, color_val, adj_list, color);
   }
 }
 
+/**
+ * @brief Utility function to print vector
+ * 
+ * @param v Vector to print
+ */
 void outcontainer(const std::vector<int> &v)
 {
   for(auto it : v)
@@ -28,19 +52,28 @@ void outcontainer(const std::vector<int> &v)
   std::cout << std::endl;
 }
 
+/**
+ * @brief DFS_Util is a utility dfs function to color various components
+ * 
+ * @param N Number of nodes
+ * @param edges Edges of the graph
+ * @param adj_list Adjacency list
+ * @param color Color vector for all vertices
+ * @param colormap Stores a representative vertex of each color
+ * @return std::pair<int, int> 
+ */
 std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &edges, std::vector<std::set<int> > &adj_list, std::vector<int> &color, std::unordered_map<int, int> &colormap)
 {
-  int color_cnt = 0; // Total colors used
+  int color_cnt = 0; //!< Total colors used
 
   for(int i = 0; i < N; i++)
   {
     if(color[i] == -1)
     {
-      colormap[color_cnt] = i; // ith node is a representative of component with color = color_cnt
-      DFS(i, color_cnt++, adj_list, color, colormap); // Recursive DFS
+      colormap[color_cnt] = i; //!< ith node is a representative of component with color = color_cnt
+      DFS(i, color_cnt++, adj_list, color); //!< Recursive DFS
     }
   }
-  //std::cerr << "Total Components = " << color_cnt << " ";
   std::vector<int> cc(color_cnt);
   int maxv = -1, maxo = -1;
   for(int i = 0; i < N; i++)
@@ -56,7 +89,6 @@ std::pair<int, int> DFS_Util(int N, std::vector<std::tuple<int, int, double> > &
       maxo = color[i];
     }
   }
-  //std::cerr << "| Nodes = " << maxv << " ";
   return {maxo,maxv};
 }
 

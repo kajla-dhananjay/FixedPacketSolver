@@ -1,3 +1,13 @@
+/**
+ * @file linalg.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief A utility for linear algebraic functions
+ * @version 2.0
+ * @date 2021-05-29
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include<bits/stdc++.h>
 #include "linalg.h"
 

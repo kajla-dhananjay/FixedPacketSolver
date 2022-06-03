@@ -2,8 +2,8 @@
  * @file errorHandler.cpp
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
  * @brief A trivial error handling class
- * @version 1.0
- * @date 2021-2-5
+ * @version 2.0
+ * @date 2021-05-29
  * 
  * @copyright Copyright (c) 2022
  * 

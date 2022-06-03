@@ -1,14 +1,13 @@
 /**
  * @file indexedSet.cpp
  * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
- * @brief A Balanced BST based data structure which keeps track of indices
- * @version 1.0
- * @date 2021-2-5
+ * @brief A policy based-Balanced BST based data structure which keeps track of indices
+ * @version 2.0
+ * @date 2021-05-29
  * 
  * @copyright Copyright (c) 2022
  * 
  */
-
 #include<bits/stdc++.h>
 #include "indexedSet.h"
 #include "errorHandler.h"

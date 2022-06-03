@@ -1,3 +1,13 @@
+/**
+ * @file checkers.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief Checks for required properties of a graph/distribution
+ * @version 2.0
+ * @date 2021-05-29
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include<bits/stdc++.h>
 #include "checkers.h"
 

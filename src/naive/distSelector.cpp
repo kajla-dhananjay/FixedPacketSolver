@@ -1,3 +1,13 @@
+/**
+ * @file distSelector.cpp
+ * @author Dhananjay Kajla (kajla.dhananjay@gmail.com)
+ * @brief Selects from a given distribution in O(log(N)) time
+ * @version 2.0
+ * @date 2021-05-29
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include<bits/stdc++.h>
 #include "distSelector.h"
 

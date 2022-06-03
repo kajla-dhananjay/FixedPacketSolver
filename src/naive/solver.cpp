@@ -24,6 +24,7 @@
 #include "errorHandler.h"
 #include "indexedSet.h"
 #include "linalg.h"
+#include "solver.h"
 
 /************************* Global Declarations ********************************/
 
