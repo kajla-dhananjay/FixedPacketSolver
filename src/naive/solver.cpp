@@ -94,7 +94,8 @@ data *init(std::string graph_in, std::string b_in, int dd, double e)
 
   // std::cerr << "b Input Completed" << std::endl;
 
-  
+  t0 = std::chrono::high_resolution_clock::now();
+
   data *dat = new data(g, b, e, dd);
 
   // std::cout << "Cumulative Transition Matrix: " << dat->Cum_P.size() << std::endl;
@@ -200,8 +201,6 @@ void solver(std::string in_graph, std::string b, std::string out_coord, std::str
   data *dat = init(in_graph, b, d, e);
 
   std::vector<double> output(dat->n);
-
-  t0 = std::chrono::high_resolution_clock::now();
   
   solve(dat, output);
   
